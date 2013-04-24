@@ -1,0 +1,2 @@
+rm pisnes.zip
+zip pisnes.zip snes9x snes9x.gui snes9x.cfg readme.txt readme_snes9x.txt skins/rpimenu16.bmp roms/dir.txt install.sh
