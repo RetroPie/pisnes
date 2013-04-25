@@ -243,6 +243,7 @@ static void game_list_select (int index, char *game)
 	strcpy(game,fe_drivers[index].name);
 }
 
+
 static void fe_exit(void)
 {
 	free(fe_menu_bmp);
@@ -589,14 +590,12 @@ static void initSDL(void)
     joy = SDL_JoystickOpen(0);
 
     if(joy) {
-        printf("Opened joystick 0.\n");
+//sq        printf("Opened joystick 0.\n");
         if(SDL_JoystickEventState(SDL_ENABLE) != SDL_ENABLE) {
             printf("Could not set joystick event state\n", SDL_GetError());
             fe_exit();
         }
-    } else {
-        printf("Could not initialize joystick.");
-    }
+    } 
 }
 
 static void frontend_init(void)
