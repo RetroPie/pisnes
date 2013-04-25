@@ -128,14 +128,12 @@ void S9xInitDisplay (int /*argc*/, char ** /*argv*/)
 	joy = SDL_JoystickOpen(0);
 
 	if(joy) {
-		printf("Opened joystick 0.\n");
+//sq		printf("Opened joystick 0.\n");
 		if(SDL_JoystickEventState(SDL_ENABLE) != SDL_ENABLE) {
 			printf("Could not set joystick event state\n", SDL_GetError());
 			S9xExit();
 		}
-	} else {
-		printf("Could not initialize joystick.");
-	}
+	} 
 
 	if (screen == NULL)
 	{
