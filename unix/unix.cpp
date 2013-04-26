@@ -260,6 +260,7 @@ static int get_keyjoy_conf (char *section, char *option, int defval)
 extern "C"
 int main (int argc, char **argv)
 {
+	
 	if (argc < 2)
 	S9xUsage ();
 	ZeroMemory (&Settings, sizeof (Settings));
@@ -324,7 +325,7 @@ int main (int argc, char **argv)
 	S9xInitInputDevices ();
 	close_config_file();
 
-	S9xInitDisplay (argc, argv);
+//sq	S9xInitDisplay (argc, argv);
 	if (!S9xGraphicsInit ())
 	OutOfMemory ();
 	if (rom_filename)
@@ -373,6 +374,7 @@ int main (int argc, char **argv)
 	    exit (1);
 	CPU.Flags |= Flags;
 	}
+	S9xInitDisplay ( Settings.PAL ? 239:224);
 
  	if (nso) {
 		Settings.SoundBufferSize = 8192;

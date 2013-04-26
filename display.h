@@ -54,7 +54,8 @@ bool8 S9xReadMousePosition (int which1_0_to_1, int &x, int &y, uint32 &buttons);
 bool8 S9xReadSuperScopePosition (int &x, int &y, uint32 &buttons);
 
 void S9xUsage ();
-void S9xInitDisplay (int argc, char **argv);
+//sq void S9xInitDisplay (int argc, char **argv);
+void S9xInitDisplay (int height);
 void S9xDeinitDisplay ();
 void S9xInitInputDevices ();
 void S9xSetTitle (const char *title);

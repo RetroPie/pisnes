@@ -104,8 +104,10 @@ void S9xTextMode ()
 #endif
 
 extern uint8 *keyssnes;
-void S9xInitDisplay (int /*argc*/, char ** /*argv*/)
+void S9xInitDisplay (int height)
 {
+	int width=256;
+
 	if (SDL_Init(SDL_INIT_JOYSTICK) < 0 ) 
 	{
 		printf("Could not initialize SDL(%s)\n", SDL_GetError());
@@ -170,7 +172,7 @@ void S9xInitDisplay (int /*argc*/, char ** /*argv*/)
     //sq uint32_t display_border=24;
     uint32_t display_border=0;
     float display_ratio,game_ratio;
-	int width=256, height=240;
+//sq	int width=256, height=240;
 
     VC_RECT_T dst_rect;
     VC_RECT_T src_rect;
