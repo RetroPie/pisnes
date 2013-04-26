@@ -6,13 +6,13 @@ This is a Super Nintento Emulator port based on SNES9X 1.39. This is an old vers
 
 Games that will not work, for example, are Yoshi's Island, Street Fighter Alpha 2, Star Fox.
 
-This port supports keyboard and USB joystick input and are configurable. It uses the bare metal Dispmanx graphics API so can run equally well in the Console or under X-Windows. The audio uses the ALSA API. It uses SDL for input.
+This port supports keyboard and USB joystick input and are configurable. It uses the bare metal Dispmanx graphics API so can run equally well in the Console or under X-Windows. The audio uses the ALSA API and SDL is used for input.
 
 Download it from the official Raspberry Pi Store App:
 http://store.raspberrypi.com/projects/pisnes
 
 Web page for news, source, additional information:
-http://code.google.com/p/mame4all-pi/
+http://code.google.com/p/pisnes/
 
 (No asking for ROMS, problems with ROMS)
 
@@ -39,9 +39,11 @@ F1-F4            Quickload 1-4
 Shift F1-F4      Quicksave 1-4
 }}}
 
-The joystick layout defaults to Saitek button layout.
+The joystick layout defaults to Saitek P380 button layout.
 
 All controls are configurable by editing the "snes9x.cfg" file.
+
+Quickload and Quicksave, load and save snapshots of the game. Game saves are automatically loaded and saved when PiSNES starts and quits.
 
 
 *INSTALLATION*
@@ -55,8 +57,7 @@ $HOME/.snes96_snapshots/ -> SRM and snapshot saves are stored here
 }}}
 
 To run PiSNES simple run the "snes9x.gui" executable. At the command line "./snes9x.gui".
-This runs the GUI frontend. To simply run PiSNES without the GUI
-enter "./snes9x roms/{gamerom}" where "{gamerom}" is the game rom filename to run.
+This runs the GUI frontend. To simply run PiSNES without the GUI enter "./snes9x roms/{gamerom}" where "{gamerom}" is the game rom filename to run.
 
 It will work in X-Windows or in the Console.
 
