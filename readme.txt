@@ -113,7 +113,7 @@ Composite output, try removing/commenting out the "overscan_" parameters from "/
 
 *CHANGE LOG*
 
-_May 02, 2013:+
+_May 02, 2013:_
   * Added two joystick support.
   * The joystick buttons SELECT+START now quit.
   * Reduced sensitivity of the analog joystick.
