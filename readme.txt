@@ -41,6 +41,8 @@ Shift F1-F4      Quicksave 1-4
 
 The joystick layout defaults to Saitek P380 button layout.
 
+Additionally to quit with the joystick you can press SELECT+START.
+
 All controls are configurable by editing the "snes9x.cfg" file.
 
 Quickload and Quicksave, load and save snapshots of the game. Game saves are automatically loaded and saved when PiSNES starts and quits.
@@ -110,6 +112,11 @@ Composite output, try removing/commenting out the "overscan_" parameters from "/
   * Based on the Dingoo SDL version of SNES9X v1.39
 
 *CHANGE LOG*
+
+_May 02, 2013:+
+  * Added two joystick support.
+  * The joystick buttons SELECT+START now quit.
+  * Reduced sensitivity of the analog joystick.
 
 _April 24, 2013:_
   * Initial release.

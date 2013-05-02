@@ -2532,13 +2532,9 @@ void S9xNextController()
 
 void S9xUpdateJoypads(struct InternalPPU *ippu)
 {
-#ifdef _ZAURUS
-	int i = 0;
-#else
 	int i;
 
 	for (i = 0; i < 5; i++)
-#endif
 	{
 		ippu->Joypads[i] = S9xReadJoypad(i);
 		if (ippu->Joypads[i] & SNES_LEFT_MASK)
@@ -2547,11 +2543,8 @@ void S9xUpdateJoypads(struct InternalPPU *ippu)
 			ippu->Joypads[i] &= ~SNES_DOWN_MASK;
 	}
 
-#ifndef _ZAURUS
-	//touhaiden controller Fix
-	if (SNESGameFixes.TouhaidenControllerFix
-		&& (ippu->Controller == SNES_JOYPAD
-			|| ippu->Controller == SNES_MULTIPLAYER5))
+	// BJ: This is correct behavior AFAICT (used to be Touhaiden hack)
+	if (ippu->Controller == SNES_JOYPAD || ippu->Controller == SNES_MULTIPLAYER5)
 	{
 		for (i = 0; i < 5; i++)
 		{
@@ -2559,17 +2552,18 @@ void S9xUpdateJoypads(struct InternalPPU *ippu)
 				ippu->Joypads[i] |= 0xffff0000;
 		}
 	}
-	// Read mouse position if enabled
-	if (Settings.MouseMaster)
-	{
-		for (i = 0; i < 2; i++)
-			S9xProcessMouse(i);
-	}
 
-	// Read SuperScope if enabled
-	if (Settings.SuperScopeMaster)
-		ProcessSuperScope();
-#endif
+//sq	// Read mouse position if enabled
+//sq	if (Settings.MouseMaster)
+//sq	{
+//sq		for (i = 0; i < 2; i++)
+//sq			S9xProcessMouse(i);
+//sq	}
+
+//sq	// Read SuperScope if enabled
+//sq	if (Settings.SuperScopeMaster)
+//sq		ProcessSuperScope();
+
 	if (Memory.FillRAM[0x4200] & 1)
 	{
 		PPU.Joypad1ButtonReadPos = 16;

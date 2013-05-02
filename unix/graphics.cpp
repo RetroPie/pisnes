@@ -83,7 +83,7 @@ DISPMANX_UPDATE_HANDLE_T dispman_update;
 //sq SDL_Surface *screen, *gfxscreen;
 SDL_Surface *gfxscreen;
 unsigned short *screen;
-SDL_Joystick *joy;
+SDL_Joystick *joy[2];
 
 uint16 *RGBconvert;
 extern uint32 xs, ys, cl, cs;
@@ -127,15 +127,31 @@ void S9xInitDisplay (int height)
 
 	bcm_host_init();
 
-	joy = SDL_JoystickOpen(0);
+    //We handle up to four joysticks
+    if(SDL_NumJoysticks())
+    {
+        int i;
+        SDL_JoystickEventState(SDL_ENABLE);
 
-	if(joy) {
-//sq		printf("Opened joystick 0.\n");
-		if(SDL_JoystickEventState(SDL_ENABLE) != SDL_ENABLE) {
-			printf("Could not set joystick event state\n", SDL_GetError());
-			S9xExit();
-		}
-	} 
+        for(i=0;i<SDL_NumJoysticks();i++) {
+            joy[i]=SDL_JoystickOpen(i);
+
+            //Check for valid joystick, some keyboards
+            //aren't SDL compatible
+            if(joy[i])
+            {
+                if (SDL_JoystickNumAxes(joy[i]) > 6)
+                {
+                    SDL_JoystickClose(joy[i]);
+                    joy[i]=0;
+                    printf("Error detected invalid joystick/keyboard\n");
+                    break;
+                }
+            }
+			if(i==1) break;		//Only need two joysticks
+        }
+    }
+
 
 	if (screen == NULL)
 	{
@@ -260,6 +276,7 @@ void S9xInitDisplay (int height)
 void S9xDeinitDisplay ()
 {
 	int ret;
+	int i;
 	free(screen);
 
     dispman_update = vc_dispmanx_update_start( 0 );
@@ -269,8 +286,11 @@ void S9xDeinitDisplay ()
     ret = vc_dispmanx_resource_delete( resource1 );
     ret = vc_dispmanx_display_close( dispman_display );
 
-	if(SDL_JoystickOpened(0))
-		SDL_JoystickClose(joy); // Should this go here? WHO KNOWS
+	for(i=0;i<2;i++)
+	{
+		if(SDL_JoystickOpened(i))
+			SDL_JoystickClose(joy[i]); // Should this go here? WHO KNOWS
+	}
 
 	SDL_Quit();
 	bcm_host_deinit();
