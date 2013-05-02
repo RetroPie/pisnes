@@ -832,35 +832,38 @@ void S9xProcessEvents (bool8_32 block)
 		case SDL_JOYBUTTONUP:
 			joy_buttons[event.jbutton.button] = 0;
 			break;
-		case SDL_JOYAXISMOTION:
-			switch(event.jaxis.axis) {
-				case JA_LR:
-					if(event.jaxis.value == 0)
-						joy_axes[JA_LR] = CENTER;
-					else if(event.jaxis.value > 0)
-						joy_axes[JA_LR] = RIGHT;
-					else
-						joy_axes[JA_LR] = LEFT;
-				break;
-				case JA_UD:
-					if(event.jaxis.value == 0)
-						joy_axes[JA_UD] = CENTER;
-					else if(event.jaxis.value > 0)
-						joy_axes[JA_UD] = DOWN;
-					else
-						joy_axes[JA_UD] = UP;
-				break;
-			}
+        case SDL_JOYAXISMOTION:
+            switch(event.jaxis.axis) {
+                case JA_LR:
+                    if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
+                        joy_axes[JA_LR] = CENTER;
+                    else if(event.jaxis.value > 10000)
+                        joy_axes[JA_LR] = RIGHT;
+                    else
+                        joy_axes[JA_LR] = LEFT;
+                break;
+                case JA_UD:
+                    if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
+                        joy_axes[JA_UD] = CENTER;
+                    else if(event.jaxis.value > 10000)
+                        joy_axes[JA_UD] = DOWN;
+                    else
+                        joy_axes[JA_UD] = UP;
+                break;
+            }
+            break;
 		case SDL_KEYDOWN:
 			keyssnes = SDL_GetKeyState(NULL);
 
 	 		if (event.key.keysym.sym == SDLK_0)
 				Settings.DisplayFrameRate = !Settings.DisplayFrameRate;
+
 /*		    else if (event.key.keysym.sym == SDLK_1)	PPU.BG_Forced ^= 1;
 		    else if (event.key.keysym.sym == SDLK_2)	PPU.BG_Forced ^= 2;
 		    else if (event.key.keysym.sym == SDLK_3)	PPU.BG_Forced ^= 4;
 		    else if (event.key.keysym.sym == SDLK_4)	PPU.BG_Forced ^= 8;
 		    else if (event.key.keysym.sym == SDLK_5)	PPU.BG_Forced ^= 16; */
+
 			else if (event.key.keysym.sym == SDLK_F1)	num = 1;
 			else if (event.key.keysym.sym == SDLK_F2)	num = 2;
 			else if (event.key.keysym.sym == SDLK_F3)	num = 3;
@@ -1098,6 +1101,8 @@ uint32 S9xReadJoypad (int which1)
 	if (keyssnes[sfc_key[RD_2]] == SDL_PRESSED)	val |= SNES_RIGHT_MASK | SNES_DOWN_MASK; */
 
 	if (keyssnes[sfc_key[QUIT]] == SDL_PRESSED || joy_buttons[sfc_joy[QUIT]]) S9xExit();
+
+	if (val & SNES_SELECT_MASK && val & SNES_START_MASK) S9xExit();
 
 	if (joy_buttons[sfc_joy[QLOAD]]) {
 		char fname[256];

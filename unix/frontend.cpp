@@ -273,17 +273,17 @@ static void fe_ProcessEvents (void)
 		case SDL_JOYAXISMOTION:
 			switch(event.jaxis.axis) {
 				case JA_LR:
-					if(event.jaxis.value == 0)
+					if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
 						joy_axes[JA_LR] = CENTER;
-					else if(event.jaxis.value > 0)
+					else if(event.jaxis.value > 10000)
 						joy_axes[JA_LR] = RIGHT;
 					else
 						joy_axes[JA_LR] = LEFT;
 				break;
 				case JA_UD:
-					if(event.jaxis.value == 0)
+					if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
 						joy_axes[JA_UD] = CENTER;
-					else if(event.jaxis.value > 0)
+					else if(event.jaxis.value > 10000)
 						joy_axes[JA_UD] = DOWN;
 					else
 						joy_axes[JA_UD] = UP;
@@ -308,12 +308,15 @@ static uint32 fe_ReadJoypad (int which1)
 	if (keyssnes[sfc_key[A_1]] == SDL_PRESSED || joy_buttons[sfc_joy[A_1]])		val |= SNES_A_MASK;
 	if (keyssnes[sfc_key[B_1]] == SDL_PRESSED || joy_buttons[sfc_joy[B_1]])		val |= SNES_B_MASK;
 	if (keyssnes[sfc_key[START_1]] == SDL_PRESSED || joy_buttons[sfc_joy[START_1]])	val |= SNES_START_MASK;
+	if (keyssnes[sfc_key[SELECT_1]] == SDL_PRESSED || joy_buttons[sfc_joy[SELECT_1]])	val |= SNES_SELECT_MASK;
 	if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_axes[JA_UD] == UP)		val |= SNES_UP_MASK;
 	if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[JA_UD] == DOWN)	val |= SNES_DOWN_MASK;
 	if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[JA_LR] == LEFT)	val |= SNES_LEFT_MASK;
 	if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[JA_LR] == RIGHT)	val |= SNES_RIGHT_MASK;
 
 	if (keyssnes[sfc_key[QUIT]] == SDL_PRESSED || joy_buttons[sfc_joy[QUIT]]) fe_exit();
+
+	if (val&SNES_SELECT_MASK && val&SNES_START_MASK) fe_exit();
 
 	return(val);
 }
