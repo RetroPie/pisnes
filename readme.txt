@@ -113,6 +113,12 @@ Composite output, try removing/commenting out the "overscan_" parameters from "/
 
 *CHANGE LOG*
 
+_May 08, 2013:_
+  * Added more configuration to the snes9x.cfg for graphics and sound.
+  * Added options for aspect ratio, stretching and video border.
+  * Pass command line options from frontend to runtime snes9x.
+  * Fix config file not being read when calling snes9x binary outside of CWD.
+
 _May 02, 2013:_
   * Added two joystick support.
   * The joystick buttons SELECT+START now quit.

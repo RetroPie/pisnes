@@ -72,7 +72,6 @@ DISPMANX_RESOURCE_HANDLE_T   resource_bg;
 // these are used for switching between the buffers
 DISPMANX_RESOURCE_HANDLE_T cur_res;
 DISPMANX_RESOURCE_HANDLE_T prev_res;
-DISPMANX_RESOURCE_HANDLE_T tmp_res;
 
 DISPMANX_ELEMENT_HANDLE_T dispman_element;
 DISPMANX_ELEMENT_HANDLE_T dispman_element_bg;
@@ -184,11 +183,9 @@ void S9xInitDisplay (int height)
     int ret;
     uint32_t display_width, display_height;
     uint32_t display_width_save, display_height_save;
-    uint32_t display_x=0, display_y=0;
-    //sq uint32_t display_border=24;
-    uint32_t display_border=0;
     float display_ratio,game_ratio;
-//sq	int width=256, height=240;
+
+    uint32_t display_x=0, display_y=0;
 
     VC_RECT_T dst_rect;
     VC_RECT_T src_rect;
@@ -201,8 +198,8 @@ void S9xInitDisplay (int height)
     display_height_save = display_height;
 
     // Add border around bitmap for TV
-    display_width -= display_border*2;
-    display_height -= display_border*2;
+    display_width -= Settings.DisplayBorder * 2;
+    display_height -= Settings.DisplayBorder * 2;
 
     //Create two surfaces for flipping between
     //Make sure bitmap type matches the source for better performance
@@ -213,24 +210,38 @@ void S9xInitDisplay (int height)
     //Create a blank background for the whole screen, make sure width is divisible by 32!
     resource_bg = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 128, 128, &crap);
 
-    // Work out the position and size on the display
-    display_ratio = (float)display_width/(float)display_height;
-    game_ratio = (float)width/(float)height;
+	if(Settings.MaintainAspectRatio) {
+	    // Work out the position and size on the display
+	    display_ratio = (float)display_width/(float)display_height;
+	    game_ratio = (float)width/(float)height;
+	
+	    display_x = display_width;
+	    display_y = display_height;
+	
+	    if (game_ratio>display_ratio) {
+	        display_height = (float)display_width/(float)game_ratio;
+	    } else {
+	        display_width = display_height*(float)game_ratio;;
+	    }
+	
+	    // Centre bitmap on screen
+	    display_x = (display_x - display_width) / 2;
+	    display_y = (display_y - display_height) / 2;
 
-    display_x = display_width;
-    display_y = display_height;
+	} 
+	else {
+		display_x = 0;
+		display_y = 0;
+	}
 
-    if (game_ratio>display_ratio) {
-        display_height = (float)display_width/(float)game_ratio;
-    } else {
-        display_width = display_height*(float)game_ratio;;
-    }
+	if(!Settings.StretchVideo) {
+		display_width = width;
+		display_height = height;
+		display_x = (display_width_save - display_width) / 2;
+		display_y = (display_height_save - display_height) / 2;
+	}
 
-    // Centre bitmap on screen
-    display_x = (display_x - display_width) / 2;
-    display_y = (display_y - display_height) / 2;
-
-    vc_dispmanx_rect_set( &dst_rect, display_x + display_border, display_y + display_border,
+    vc_dispmanx_rect_set( &dst_rect, display_x + Settings.DisplayBorder, display_y + Settings.DisplayBorder,
                                 display_width, display_height);
     vc_dispmanx_rect_set( &src_rect, 0, 0, width << 16, height << 16);
 

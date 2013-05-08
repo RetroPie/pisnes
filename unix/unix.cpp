@@ -97,7 +97,6 @@ extern DISPMANX_RESOURCE_HANDLE_T   resource_bg;
 // these are used for switching between the buffers
 extern DISPMANX_RESOURCE_HANDLE_T cur_res;
 extern DISPMANX_RESOURCE_HANDLE_T prev_res;
-extern DISPMANX_RESOURCE_HANDLE_T tmp_res;
 
 extern DISPMANX_ELEMENT_HANDLE_T dispman_element;
 extern DISPMANX_ELEMENT_HANDLE_T dispman_element_bg;
@@ -134,6 +133,7 @@ uint8 joy_axes[2][8];
 
 void InitTimer ();
 void *S9xProcessSound (void *);
+void S9xParseConfigFile (void);
 
 static alsa_t *alsa_init(void);
 
@@ -241,7 +241,7 @@ static void close_config_file(void)
     g_key_file_free(gkeyfile);
 }
 
-static int get_keyjoy_conf (char *section, char *option, int defval)
+static int get_integer_conf (char *section, char *option, int defval)
 {
 	GError *error=NULL;
 	int tempint;
@@ -262,7 +262,17 @@ int main (int argc, char **argv)
 {
 	
 	if (argc < 2)
-	S9xUsage ();
+		S9xUsage ();
+
+	char abspath[1000];
+
+	//Set the directory to where the binary is
+	realpath(argv[0], abspath);
+	char *dirsep = strrchr(abspath, '/');
+	if( dirsep != 0 ) *dirsep = 0;
+	chdir(abspath);
+
+
 	ZeroMemory (&Settings, sizeof (Settings));
 
 	Settings.JoystickEnabled = TRUE; // rPi changed default
@@ -295,6 +305,15 @@ int main (int argc, char **argv)
 	Settings.ApplyCheats = TRUE;
 	Settings.TurboMode = FALSE;
 	Settings.TurboSkipFrames = 0;
+	Settings.StretchVideo = 1;
+	Settings.MaintainAspectRatio = 1;
+	Settings.DisplayBorder = 0;
+	Settings.InterpolatedSound = 0;
+
+	//Override defaults from the config file
+	S9xParseConfigFile();
+
+	//Command line arguments override all others
 	rom_filename = S9xParseArgs (argv, argc);
 
 //    Settings.Transparency = Settings.ForceTransparency;
@@ -321,11 +340,8 @@ int main (int argc, char **argv)
 	S9xSetRenderPixelFormat (RGB565);
 #endif
 
-	open_config_file();
 	S9xInitInputDevices ();
-	close_config_file();
 
-//sq	S9xInitDisplay (argc, argv);
 	if (!S9xGraphicsInit ())
 	OutOfMemory ();
 	if (rom_filename)
@@ -429,22 +445,25 @@ void S9xInitInputDevices ()
 	memset(sfc_key, 0, NUMKEYS*2);
 	memset(sfc_joy, 0, NUMKEYS*2);
 
-	//Configure keys from config file or defaults
-	sfc_key[A_1] = get_keyjoy_conf("keyboard", "A_1", RPI_KEY_A);
-	sfc_key[B_1] = get_keyjoy_conf("keyboard", "B_1", RPI_KEY_B);
-	sfc_key[X_1] = get_keyjoy_conf("keyboard", "X_1", RPI_KEY_X);
-	sfc_key[Y_1] = get_keyjoy_conf("keyboard", "Y_1", RPI_KEY_Y);
-	sfc_key[L_1] = get_keyjoy_conf("keyboard", "L_1", RPI_KEY_L);
-	sfc_key[R_1] = get_keyjoy_conf("keyboard", "R_1", RPI_KEY_R);
-	sfc_key[START_1] = get_keyjoy_conf("keyboard", "START_1", RPI_KEY_START);
-	sfc_key[SELECT_1] = get_keyjoy_conf("keyboard", "SELECT_1", RPI_KEY_SELECT);
-	sfc_key[LEFT_1] = get_keyjoy_conf("keyboard", "LEFT_1", RPI_KEY_LEFT);
-	sfc_key[RIGHT_1] = get_keyjoy_conf("keyboard", "RIGHT_1", RPI_KEY_RIGHT);
-	sfc_key[UP_1] = get_keyjoy_conf("keyboard", "UP_1", RPI_KEY_UP);
-	sfc_key[DOWN_1] = get_keyjoy_conf("keyboard", "DOWN_1", RPI_KEY_DOWN);
+	//Open config file for reading below
+	open_config_file();
 
-	sfc_key[QUIT] = get_keyjoy_conf("keyboard", "QUIT", RPI_KEY_QUIT);
-	sfc_key[ACCEL] = get_keyjoy_conf("keyboard", "ACCEL", RPI_KEY_ACCEL);
+	//Configure keys from config file or defaults
+	sfc_key[A_1] = get_integer_conf("Keyboard", "A_1", RPI_KEY_A);
+	sfc_key[B_1] = get_integer_conf("Keyboard", "B_1", RPI_KEY_B);
+	sfc_key[X_1] = get_integer_conf("Keyboard", "X_1", RPI_KEY_X);
+	sfc_key[Y_1] = get_integer_conf("Keyboard", "Y_1", RPI_KEY_Y);
+	sfc_key[L_1] = get_integer_conf("Keyboard", "L_1", RPI_KEY_L);
+	sfc_key[R_1] = get_integer_conf("Keyboard", "R_1", RPI_KEY_R);
+	sfc_key[START_1] = get_integer_conf("Keyboard", "START_1", RPI_KEY_START);
+	sfc_key[SELECT_1] = get_integer_conf("Keyboard", "SELECT_1", RPI_KEY_SELECT);
+	sfc_key[LEFT_1] = get_integer_conf("Keyboard", "LEFT_1", RPI_KEY_LEFT);
+	sfc_key[RIGHT_1] = get_integer_conf("Keyboard", "RIGHT_1", RPI_KEY_RIGHT);
+	sfc_key[UP_1] = get_integer_conf("Keyboard", "UP_1", RPI_KEY_UP);
+	sfc_key[DOWN_1] = get_integer_conf("Keyboard", "DOWN_1", RPI_KEY_DOWN);
+
+	sfc_key[QUIT] = get_integer_conf("Keyboard", "QUIT", RPI_KEY_QUIT);
+	sfc_key[ACCEL] = get_integer_conf("Keyboard", "ACCEL", RPI_KEY_ACCEL);
 
 /*	sfc_key[LEFT_2] = SDLK_4;
 	sfc_key[RIGHT_2] = SDLK_6;
@@ -456,20 +475,22 @@ void S9xInitInputDevices ()
 	sfc_key[RD_2] = SDLK_3; */
 
 	//Configure joysticks from config file or defaults
-	sfc_joy[A_1] = get_keyjoy_conf("joystick", "A_1", RPI_JOY_A);
-	sfc_joy[B_1] = get_keyjoy_conf("joystick", "B_1", RPI_JOY_B);
-	sfc_joy[X_1] = get_keyjoy_conf("joystick", "X_1", RPI_JOY_X);
-	sfc_joy[Y_1] = get_keyjoy_conf("joystick", "Y_1", RPI_JOY_Y);
-	sfc_joy[L_1] = get_keyjoy_conf("joystick", "L_1", RPI_JOY_L);
-	sfc_joy[R_1] = get_keyjoy_conf("joystick", "R_1", RPI_JOY_R);
-	sfc_joy[START_1] = get_keyjoy_conf("joystick", "START_1", RPI_JOY_START);
-	sfc_joy[SELECT_1] = get_keyjoy_conf("joystick", "SELECT_1", RPI_JOY_SELECT);
+	sfc_joy[A_1] = get_integer_conf("Joystick", "A_1", RPI_JOY_A);
+	sfc_joy[B_1] = get_integer_conf("Joystick", "B_1", RPI_JOY_B);
+	sfc_joy[X_1] = get_integer_conf("Joystick", "X_1", RPI_JOY_X);
+	sfc_joy[Y_1] = get_integer_conf("Joystick", "Y_1", RPI_JOY_Y);
+	sfc_joy[L_1] = get_integer_conf("Joystick", "L_1", RPI_JOY_L);
+	sfc_joy[R_1] = get_integer_conf("Joystick", "R_1", RPI_JOY_R);
+	sfc_joy[START_1] = get_integer_conf("Joystick", "START_1", RPI_JOY_START);
+	sfc_joy[SELECT_1] = get_integer_conf("Joystick", "SELECT_1", RPI_JOY_SELECT);
 
-	sfc_joy[QUIT] = get_keyjoy_conf("joystick", "QUIT", RPI_JOY_QUIT);
-	sfc_joy[ACCEL] = get_keyjoy_conf("joystick", "ACCEL", RPI_JOY_ACCEL);
+	sfc_joy[QUIT] = get_integer_conf("Joystick", "QUIT", RPI_JOY_QUIT);
+	sfc_joy[ACCEL] = get_integer_conf("Joystick", "ACCEL", RPI_JOY_ACCEL);
 
-	sfc_joy[QLOAD] = get_keyjoy_conf("joystick", "QLOAD", RPI_JOY_QLOAD);
-	sfc_joy[QSAVE] = get_keyjoy_conf("joystick", "QSAVE", RPI_JOY_QSAVE);
+	sfc_joy[QLOAD] = get_integer_conf("Joystick", "QLOAD", RPI_JOY_QLOAD);
+	sfc_joy[QSAVE] = get_integer_conf("Joystick", "QSAVE", RPI_JOY_QSAVE);
+
+	close_config_file();
 }
 	
 
@@ -637,6 +658,7 @@ bool8_32 S9xDeinitUpdate (int Width, int Height)
 
 	{
 	    VC_RECT_T dst_rect;
+		DISPMANX_RESOURCE_HANDLE_T tmp_res;
 	
 	    vc_dispmanx_rect_set( &dst_rect, 0, 0, 256, Height );
 	
@@ -756,65 +778,80 @@ unsigned long getticker()
 void S9xSyncSpeed ()
 {
 	S9xProcessEvents (FALSE);
-	if (!Settings.TurboMode && Settings.SkipFrames == AUTO_FRAMERATE)
+
+	if (Settings.TurboMode)
 	{
-		static unsigned long next1 = 0;
-		unsigned long now;
-	
-		now = getticker();
-
-		if (next1 == 0)
+		if ((++IPPU.FrameSkip >= Settings.TurboSkipFrames) )
 		{
-		    next1 = now;
-		    next1++;
-		}
-	
-		if (next1 > now)
-		{
-		    if (IPPU.SkippedFrames == 0)
-		    {
-
-			do
-			{
-			    CHECK_SOUND ();
-		//	    S9xProcessEvents (FALSE);
-			    now=getticker();
-			} while (next1 > now);
-		    }
-		    IPPU.RenderThisFrame = TRUE;
-		    IPPU.SkippedFrames = 0;
+			IPPU.FrameSkip = 0;
+			IPPU.SkippedFrames = 0;
+			IPPU.RenderThisFrame = TRUE;
 		}
 		else
 		{
-		    if (IPPU.SkippedFrames < mfs)
-		    {
 			IPPU.SkippedFrames++;
 			IPPU.RenderThisFrame = FALSE;
-		    }
-		    else
-		    {
-			IPPU.RenderThisFrame = TRUE;
-			IPPU.SkippedFrames = 0;
-			next1 = now;
-		    }
 		}
-		next1 += Settings.FrameTime;
+
+		return;
 	}
+
+	static struct timeval	next1 = { 0, 0 };
+	struct timeval			now;
+
+	while (gettimeofday(&now, NULL) == -1) ;
+
+	// If there is no known "next" frame, initialize it now.
+	if (next1.tv_sec == 0)
+	{
+		next1 = now;
+		next1.tv_usec++;
+	}
+
+	// If we're on AUTO_FRAMERATE, we'll display frames always only if there's excess time.
+	// Otherwise we'll display the defined amount of frames.
+	unsigned	limit = (Settings.SkipFrames == AUTO_FRAMERATE) ? (timercmp(&next1, &now, <) ? 10 : 1) : Settings.SkipFrames;
+
+	IPPU.RenderThisFrame = (++IPPU.SkippedFrames >= limit) ? TRUE : FALSE;
+
+	if (IPPU.RenderThisFrame)
+		IPPU.SkippedFrames = 0;
 	else
 	{
-	if (++IPPU.FrameSkip >= (Settings.TurboMode ? Settings.TurboSkipFrames
-						    : Settings.SkipFrames))
+		// If we were behind the schedule, check how much it is.
+		if (timercmp(&next1, &now, <))
+		{
+			unsigned	lag = (now.tv_sec - next1.tv_sec) * 1000000 + now.tv_usec - next1.tv_usec;
+			if (lag >= 500000)
+			{
+				// More than a half-second behind means probably pause.
+				// The next line prevents the magic fast-forward effect.
+				next1 = now;
+			}
+		}
+	}
+
+	// Delay until we're completed this frame.
+	// Can't use setitimer because the sound code already could be using it. We don't actually need it either.
+	while (timercmp(&next1, &now, >))
 	{
-	    IPPU.FrameSkip = 0;
-	    IPPU.SkippedFrames = 0;
-	    IPPU.RenderThisFrame = TRUE;
+		// If we're ahead of time, sleep a while.
+//sq		unsigned	timeleft = (next1.tv_sec - now.tv_sec) * 1000000 + next1.tv_usec - now.tv_usec;
+//sq		usleep(timeleft);
+
+		while (gettimeofday(&now, NULL) == -1) ;
+		// Continue with a while-loop because usleep() could be interrupted by a signal.
 	}
-	else
+
+	// Calculate the timestamp of the next frame.
+	next1.tv_usec += Settings.FrameTime;
+	if (next1.tv_usec >= 1000000)
 	{
-	    IPPU.SkippedFrames++;
-	    IPPU.RenderThisFrame = FALSE;
+		next1.tv_sec += next1.tv_usec / 1000000;
+		next1.tv_usec %= 1000000;
 	}
-	}
+
+
 }
 
 void S9xProcessEvents (bool8_32 block)
@@ -1126,110 +1163,35 @@ uint32 S9xReadJoypad (int which1)
 	return(val);
 }
 
-#if 0
-void S9xParseConfigFile ()
+
+void S9xParseConfigFile (void)
 {
-	int i, t = 0;
-	char *b, buf[10];
-	struct ffblk f;
+	int i=0;
 
-	set_config_file("SNES9X.CFG");
+	open_config_file();
 
-	if (findfirst("SNES9X.CFG", &f, 0) != 0)
-	{
-	   set_config_int("Graphics", "VideoMode", -1);
-	   set_config_int("Graphics", "AutoFrameskip", 1);
-	   set_config_int("Graphics", "Frameskip", 0);
-	   set_config_int("Graphics", "Shutdown", 1);
-	   set_config_int("Graphics", "FrameTimePAL", 20000);
-	   set_config_int("Graphics", "FrameTimeNTSC", 16667);
-	   set_config_int("Graphics", "Transparency", 0);
-	   set_config_int("Graphics", "HiColor", 0);
-	   set_config_int("Graphics", "Hi-ResSupport", 0);
-	   set_config_int("Graphics", "CPUCycles", 100);
-	   set_config_int("Graphics", "Scale", 0);
-	   set_config_int("Graphics", "VSync", 0);
-	   set_config_int("Sound", "APUEnabled", 1);
-	   set_config_int("Sound", "SoundPlaybackRate", 7);
-	   set_config_int("Sound", "Stereo", 1);
-	   set_config_int("Sound", "SoundBufferSize", 256);
-	   set_config_int("Sound", "SPCToCPURatio", 2);
-	   set_config_int("Sound", "Echo", 1);
-	   set_config_int("Sound", "SampleCaching", 1);
-	   set_config_int("Sound", "MasterVolume", 1);
-	   set_config_int("Peripherals", "Mouse", 1);
-	   set_config_int("Peripherals", "SuperScope", 1);
-	   set_config_int("Peripherals", "MultiPlayer5", 1);
-	   set_config_int("Peripherals", "Controller", 0);
-	   set_config_int("Controllers", "Type", JOY_TYPE_AUTODETECT);
-	   set_config_string("Controllers", "Button1", "A");
-	   set_config_string("Controllers", "Button2", "B");
-	   set_config_string("Controllers", "Button3", "X");
-	   set_config_string("Controllers", "Button4", "Y");
-	   set_config_string("Controllers", "Button5", "TL");
-	   set_config_string("Controllers", "Button6", "TR");
-	   set_config_string("Controllers", "Button7", "START");
-	   set_config_string("Controllers", "Button8", "SELECT");
-	   set_config_string("Controllers", "Button9", "NONE");
-	   set_config_string("Controllers", "Button10", "NONE");
-	}
+	Settings.StretchVideo = get_integer_conf("Graphics", "StretchVideo", 1);
+	Settings.MaintainAspectRatio = get_integer_conf("Graphics", "MaintainAspectRatio", 1);
+	Settings.DisplayBorder = get_integer_conf("Graphics", "DisplayBorder", 0);
 
-	mode = get_config_int("Graphics", "VideoMode", -1);
-	Settings.SkipFrames = get_config_int("Graphics", "AutoFrameskip", 1);
+	Settings.SkipFrames = get_integer_conf("Graphics", "AutoFrameskip", 1);
 	if (!Settings.SkipFrames)
-	  Settings.SkipFrames = get_config_int("Graphics", "Frameskip", AUTO_FRAMERATE);
+	  Settings.SkipFrames = get_integer_conf("Graphics", "Frameskip", AUTO_FRAMERATE);
 	else
 	  Settings.SkipFrames = AUTO_FRAMERATE;
-	Settings.ShutdownMaster = get_config_int("Graphics", "Shutdown", TRUE);
-	Settings.FrameTimePAL = get_config_int("Graphics", "FrameTimePAL", 20000);
-	Settings.FrameTimeNTSC = get_config_int("Graphics", "FrameTimeNTSC", 16667);
-	Settings.FrameTime = Settings.FrameTimeNTSC;
-	Settings.Transparency = get_config_int("Graphics", "Transparency", FALSE);
-	Settings.SixteenBit = get_config_int("Graphics", "HiColor", FALSE);
-	Settings.SupportHiRes = get_config_int("Graphics", "Hi-ResSupport", FALSE);
-	i = get_config_int("Graphics", "CPUCycles", 100);
+
+	Settings.Transparency = get_integer_conf("Graphics", "Transparency", TRUE);
+	i = get_integer_conf("Graphics", "CPUCycles", 100);
 	Settings.H_Max = (i * SNES_CYCLES_PER_SCANLINE) / i;
-	stretch = get_config_int("Graphics", "Scale", 0);
-	_vsync = get_config_int("Graphics", "VSync", 0);
 
-	Settings.APUEnabled = get_config_int("Sound", "APUEnabled", TRUE);
-	Settings.SoundPlaybackRate = get_config_int("Sound", "SoundPlaybackRate", 7);
-	Settings.Stereo = get_config_int("Sound", "Stereo", TRUE);
-	Settings.SoundBufferSize = get_config_int("Sound", "SoundBufferSize", 256);
-	Settings.SPCTo65c816Ratio = get_config_int("Sound", "SPCToCPURatio", 2);
-	Settings.DisableSoundEcho = get_config_int("Sound", "Echo", TRUE) ? FALSE : TRUE;
-	Settings.DisableSampleCaching = get_config_int("Sound", "SampleCaching", TRUE) ? FALSE : TRUE;
-	Settings.DisableMasterVolume = get_config_int("Sound", "MasterVolume", TRUE) ? FALSE : TRUE;
+	Settings.APUEnabled = get_integer_conf("Sound", "APUEnabled", TRUE);
+	Settings.SoundPlaybackRate = get_integer_conf("Sound", "SoundPlaybackRate", 7);
+	Settings.InterpolatedSound = get_integer_conf("Sound", "InterpolatedSound", 0);
 
-	Settings.Mouse = get_config_int("Peripherals", "Mouse", TRUE);
-	Settings.SuperScope = get_config_int("Peripherals", "SuperScope", TRUE);
-	Settings.MultiPlayer5 = get_config_int("Peripherals", "MultiPlayer5", TRUE);
-	Settings.ControllerOption = (uint32)get_config_int("Peripherals", "Controller", SNES_MULTIPLAYER5);
+	close_config_file();
 
-	joy_type = get_config_int("Controllers", "Type", JOY_TYPE_AUTODETECT);
-	for (i = 0; i < 10; i++)
-	{
-	   sprintf(buf, "Button%d", i+1);
-	   b = get_config_string("Controllers", buf, "NONE");
-	   if (!strcasecmp(b, "A"))
-	   {JOY_BUTTON_INDEX[t] = i; SNES_BUTTON_MASKS[t++] = SNES_A_MASK;}
-	   else if (!strcasecmp(b, "B"))
-	   {JOY_BUTTON_INDEX[t] = i; SNES_BUTTON_MASKS[t++] = SNES_B_MASK;}
-	   else if (!strcasecmp(b, "X"))
-	   {JOY_BUTTON_INDEX[t] = i; SNES_BUTTON_MASKS[t++] = SNES_X_MASK;}
-	   else if (!strcasecmp(b, "Y"))
-	   {JOY_BUTTON_INDEX[t] = i; SNES_BUTTON_MASKS[t++] = SNES_Y_MASK;}
-	   else if (!strcasecmp(b, "TL"))
-	   {JOY_BUTTON_INDEX[t] = i; SNES_BUTTON_MASKS[t++] = SNES_TL_MASK;}
-	   else if (!strcasecmp(b, "TR"))
-	   {JOY_BUTTON_INDEX[t] = i; SNES_BUTTON_MASKS[t++] = SNES_TR_MASK;}
-	   else if (!strcasecmp(b, "START"))
-	   {JOY_BUTTON_INDEX[t] = i; SNES_BUTTON_MASKS[t++] = SNES_START_MASK;}
-	   else if (!strcasecmp(b, "SELECT"))
-	   {JOY_BUTTON_INDEX[t] = i; SNES_BUTTON_MASKS[t++] = SNES_SELECT_MASK;}
-	}
 }
-#endif
+
 #ifndef _ZAURUS
 static int S9xCompareSDD1IndexEntries (const void *p1, const void *p2)
 {

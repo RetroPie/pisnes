@@ -364,22 +364,25 @@ static void fe_S9xInitInputDevices ()
 	memset(sfc_key, 0, NUMKEYS*2);
 	memset(sfc_joy, 0, NUMKEYS*2);
 
-	//Configure keys from config file or defaults
-	sfc_key[A_1] = get_keyjoy_conf("keyboard", "A_1", RPI_KEY_A);
-	sfc_key[B_1] = get_keyjoy_conf("keyboard", "B_1", RPI_KEY_B);
-	sfc_key[X_1] = get_keyjoy_conf("keyboard", "X_1", RPI_KEY_X);
-	sfc_key[Y_1] = get_keyjoy_conf("keyboard", "Y_1", RPI_KEY_Y);
-	sfc_key[L_1] = get_keyjoy_conf("keyboard", "L_1", RPI_KEY_L);
-	sfc_key[R_1] = get_keyjoy_conf("keyboard", "R_1", RPI_KEY_R);
-	sfc_key[START_1] = get_keyjoy_conf("keyboard", "START_1", RPI_KEY_START);
-	sfc_key[SELECT_1] = get_keyjoy_conf("keyboard", "SELECT_1", RPI_KEY_SELECT);
-	sfc_key[LEFT_1] = get_keyjoy_conf("keyboard", "LEFT_1", RPI_KEY_LEFT);
-	sfc_key[RIGHT_1] = get_keyjoy_conf("keyboard", "RIGHT_1", RPI_KEY_RIGHT);
-	sfc_key[UP_1] = get_keyjoy_conf("keyboard", "UP_1", RPI_KEY_UP);
-	sfc_key[DOWN_1] = get_keyjoy_conf("keyboard", "DOWN_1", RPI_KEY_DOWN);
+	//Open config file to read joystick values below
+	open_config_file();
 
-	sfc_key[QUIT] = get_keyjoy_conf("keyboard", "QUIT", RPI_KEY_QUIT);
-	sfc_key[ACCEL] = get_keyjoy_conf("keyboard", "ACCEL", RPI_KEY_ACCEL);
+	//Configure keys from config file or defaults
+	sfc_key[A_1] = get_keyjoy_conf("Keyboard", "A_1", RPI_KEY_A);
+	sfc_key[B_1] = get_keyjoy_conf("Keyboard", "B_1", RPI_KEY_B);
+	sfc_key[X_1] = get_keyjoy_conf("Keyboard", "X_1", RPI_KEY_X);
+	sfc_key[Y_1] = get_keyjoy_conf("Keyboard", "Y_1", RPI_KEY_Y);
+	sfc_key[L_1] = get_keyjoy_conf("Keyboard", "L_1", RPI_KEY_L);
+	sfc_key[R_1] = get_keyjoy_conf("Keyboard", "R_1", RPI_KEY_R);
+	sfc_key[START_1] = get_keyjoy_conf("Keyboard", "START_1", RPI_KEY_START);
+	sfc_key[SELECT_1] = get_keyjoy_conf("Keyboard", "SELECT_1", RPI_KEY_SELECT);
+	sfc_key[LEFT_1] = get_keyjoy_conf("Keyboard", "LEFT_1", RPI_KEY_LEFT);
+	sfc_key[RIGHT_1] = get_keyjoy_conf("Keyboard", "RIGHT_1", RPI_KEY_RIGHT);
+	sfc_key[UP_1] = get_keyjoy_conf("Keyboard", "UP_1", RPI_KEY_UP);
+	sfc_key[DOWN_1] = get_keyjoy_conf("Keyboard", "DOWN_1", RPI_KEY_DOWN);
+
+	sfc_key[QUIT] = get_keyjoy_conf("Keyboard", "QUIT", RPI_KEY_QUIT);
+	sfc_key[ACCEL] = get_keyjoy_conf("Keyboard", "ACCEL", RPI_KEY_ACCEL);
 
 /*	sfc_key[LEFT_2] = SDLK_4;
 	sfc_key[RIGHT_2] = SDLK_6;
@@ -391,20 +394,22 @@ static void fe_S9xInitInputDevices ()
 	sfc_key[RD_2] = SDLK_3; */
 
 	//Configure joysticks from config file or defaults
-	sfc_joy[A_1] = get_keyjoy_conf("joystick", "A_1", RPI_JOY_A);
-	sfc_joy[B_1] = get_keyjoy_conf("joystick", "B_1", RPI_JOY_B);
-	sfc_joy[X_1] = get_keyjoy_conf("joystick", "X_1", RPI_JOY_X);
-	sfc_joy[Y_1] = get_keyjoy_conf("joystick", "Y_1", RPI_JOY_Y);
-	sfc_joy[L_1] = get_keyjoy_conf("joystick", "L_1", RPI_JOY_L);
-	sfc_joy[R_1] = get_keyjoy_conf("joystick", "R_1", RPI_JOY_R);
-	sfc_joy[START_1] = get_keyjoy_conf("joystick", "START_1", RPI_JOY_START);
-	sfc_joy[SELECT_1] = get_keyjoy_conf("joystick", "SELECT_1", RPI_JOY_SELECT);
+	sfc_joy[A_1] = get_keyjoy_conf("Joystick", "A_1", RPI_JOY_A);
+	sfc_joy[B_1] = get_keyjoy_conf("Joystick", "B_1", RPI_JOY_B);
+	sfc_joy[X_1] = get_keyjoy_conf("Joystick", "X_1", RPI_JOY_X);
+	sfc_joy[Y_1] = get_keyjoy_conf("Joystick", "Y_1", RPI_JOY_Y);
+	sfc_joy[L_1] = get_keyjoy_conf("Joystick", "L_1", RPI_JOY_L);
+	sfc_joy[R_1] = get_keyjoy_conf("Joystick", "R_1", RPI_JOY_R);
+	sfc_joy[START_1] = get_keyjoy_conf("Joystick", "START_1", RPI_JOY_START);
+	sfc_joy[SELECT_1] = get_keyjoy_conf("Joystick", "SELECT_1", RPI_JOY_SELECT);
 
-	sfc_joy[QUIT] = get_keyjoy_conf("joystick", "QUIT", RPI_JOY_QUIT);
-	sfc_joy[ACCEL] = get_keyjoy_conf("joystick", "ACCEL", RPI_JOY_ACCEL);
+	sfc_joy[QUIT] = get_keyjoy_conf("Joystick", "QUIT", RPI_JOY_QUIT);
+	sfc_joy[ACCEL] = get_keyjoy_conf("Joystick", "ACCEL", RPI_JOY_ACCEL);
 
-	sfc_joy[QLOAD] = get_keyjoy_conf("joystick", "QLOAD", RPI_JOY_QLOAD);
-	sfc_joy[QSAVE] = get_keyjoy_conf("joystick", "QSAVE", RPI_JOY_QSAVE);
+	sfc_joy[QLOAD] = get_keyjoy_conf("Joystick", "QLOAD", RPI_JOY_QLOAD);
+	sfc_joy[QSAVE] = get_keyjoy_conf("Joystick", "QSAVE", RPI_JOY_QSAVE);
+
+	close_config_file();
 }
 
 static unsigned long fe_timer_read(void)
@@ -492,11 +497,23 @@ int main (int argc, char **argv)
 {
 	FILE *f;
 
+	char options[1000];
+	int i;
+
 	char gamename[255];
 	char *arg1;
 	arg1 = "snes9x";
 
     char abspath[1000];
+
+	//create options string for later passing to runtime
+	options[0]=NULL;
+	if(argc > 1) {
+		for(i=1;i<argc;i++) {
+			strcat(options, argv[i]);
+			strcat(options, " ");	
+		}
+	}
 
 	//Set the directory to where the binary is
     realpath(argv[0], abspath);
@@ -514,9 +531,7 @@ int main (int argc, char **argv)
 
 	while(1)
 	{
-		open_config_file();
 		fe_S9xInitInputDevices();
-		close_config_file();
 
 		//Initialise SDL input after each game run
 		initSDL();
@@ -553,10 +568,11 @@ int main (int argc, char **argv)
 	
 		//Quit SDL input before starting Game
 		SDL_Quit();
+
 	
 		//Run the actual game
 		//Using system seems to work better with snes9x
-		sprintf(gamename, "./snes9x \"roms/%s\"", playgame);
+		sprintf(gamename, "./snes9x %s \"roms/%s\"", options, playgame);
 		system(gamename);
 
 		usleep(500000);
