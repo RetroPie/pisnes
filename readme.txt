@@ -113,6 +113,9 @@ Composite output, try removing/commenting out the "overscan_" parameters from "/
 
 *CHANGE LOG*
 
+_May 11, 2013:_
+  * Added joystick button presses SELECT+TL quickload, SELECT+TR quicksave.
+
 _May 08, 2013:_
   * Added more configuration to the snes9x.cfg for graphics and sound.
   * Added options for aspect ratio, stretching and video border.

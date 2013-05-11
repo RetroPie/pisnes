@@ -1147,14 +1147,14 @@ uint32 S9xReadJoypad (int which1)
 
 	if (keyssnes[sfc_key[QUIT]] == SDL_PRESSED || joy_buttons[0][sfc_joy[QUIT]]) S9xExit();
 
-	if (which1==0 && val & SNES_SELECT_MASK && val & SNES_START_MASK) S9xExit();
+	if (which1==0 && (val & SNES_SELECT_MASK) && (val & SNES_START_MASK)) S9xExit();
 
-	if (joy_buttons[0][sfc_joy[QLOAD]]) {
+	if (joy_buttons[0][sfc_joy[QLOAD]] || (which1==0 && (val & SNES_SELECT_MASK) && (val & SNES_TL_MASK))) {
 		char fname[256];
 		strcpy(fname, S9xGetFilename (".000"));
 		S9xLoadSnapshot (fname);
 	}
-	if (joy_buttons[0][sfc_joy[QSAVE]]) {
+	if (joy_buttons[0][sfc_joy[QSAVE]] || (which1==0 && (val & SNES_SELECT_MASK) && (val & SNES_TR_MASK))) {
 		char fname[256];
 		strcpy(fname, S9xGetFilename (".000"));
 		S9xFreezeGame (fname);
