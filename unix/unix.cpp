@@ -936,6 +936,19 @@ void S9xProcessEvents (bool8_32 block)
 			}
 		}
 	}
+
+	//Check START+R,L for quicksave/quickload. Needs to go here outside of the internal processing
+	if (joy_buttons[0][sfc_joy[QLOAD]] || (joy_buttons[0][sfc_joy[SELECT_1]] && joy_buttons[0][sfc_joy[L_1]] )) {
+		char fname[256];
+		strcpy(fname, S9xGetFilename (".000"));
+		S9xLoadSnapshot (fname);
+	}
+	if (joy_buttons[0][sfc_joy[QSAVE]] || (joy_buttons[0][sfc_joy[SELECT_1]] && joy_buttons[0][sfc_joy[R_1]] )) {
+		char fname[256];
+		strcpy(fname, S9xGetFilename (".000"));
+		S9xFreezeGame (fname);
+	}
+
 }
 
 static long log2 (long num)
@@ -1148,17 +1161,6 @@ uint32 S9xReadJoypad (int which1)
 	if (keyssnes[sfc_key[QUIT]] == SDL_PRESSED || joy_buttons[0][sfc_joy[QUIT]]) S9xExit();
 
 	if (which1==0 && (val & SNES_SELECT_MASK) && (val & SNES_START_MASK)) S9xExit();
-
-	if (joy_buttons[0][sfc_joy[QLOAD]] || (which1==0 && (val & SNES_SELECT_MASK) && (val & SNES_TL_MASK))) {
-		char fname[256];
-		strcpy(fname, S9xGetFilename (".000"));
-		S9xLoadSnapshot (fname);
-	}
-	if (joy_buttons[0][sfc_joy[QSAVE]] || (which1==0 && (val & SNES_SELECT_MASK) && (val & SNES_TR_MASK))) {
-		char fname[256];
-		strcpy(fname, S9xGetFilename (".000"));
-		S9xFreezeGame (fname);
-	}
 
 	return(val);
 }
