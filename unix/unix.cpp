@@ -89,6 +89,10 @@ pthread_mutex_t mutex;
 #include <alsa/asoundlib.h>
 #include <bcm_host.h>
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+
+
 // create two resources for 'page flipping'
 extern DISPMANX_RESOURCE_HANDLE_T   resource0;
 extern DISPMANX_RESOURCE_HANDLE_T   resource1;
@@ -144,6 +148,16 @@ extern unsigned short *screen;
 static uint32 ffc = 0;
 bool8_32 nso = FALSE, vga = FALSE;
 uint32 xs = 256, ys = 240, cl = 0, cs = 0, mfs = 10;
+
+extern uint32_t display_width, display_height;
+void gles2_create();
+void gles2_destroy();
+void gles2_draw(int width, int height);
+void gles2_palette_changed();
+
+extern EGLDisplay display;
+extern EGLSurface surface;
+
 
 char *rom_filename = NULL;
 char *snapshot_filename = NULL;
@@ -656,31 +670,35 @@ bool8_32 S9xDeinitUpdate (int Width, int Height)
 	if (GFX.InfoString)
 	    S9xDisplayString (GFX.InfoString, (uint8 *)screen, 512);
 
-	{
-	    VC_RECT_T dst_rect;
-		DISPMANX_RESOURCE_HANDLE_T tmp_res;
-	
-	    vc_dispmanx_rect_set( &dst_rect, 0, 0, 256, Height );
-	
-	    // blit image to the current resource
-	    vc_dispmanx_resource_write_data( cur_res, VC_IMAGE_RGB565, 256*2, screen, &dst_rect );
-	
-	    // begin display update
-	    dispman_update = vc_dispmanx_update_start( 0 );
-	
-	    // change element source to be the current resource
-	    vc_dispmanx_element_change_source( dispman_update, dispman_element, cur_res );
-	
-	    // finish display update, vsync is handled by software throttling
-	    // dispmanx avoids any tearing. vsync here would be limited to 30fps
-	    // on a CRT TV.
-	    vc_dispmanx_update_submit( dispman_update, 0, 0 );
-	
-	    // swap current resource
-	    tmp_res = cur_res;
-	    cur_res = prev_res;
-	    prev_res = tmp_res;
-	}
+//sq 	{
+//sq 	    VC_RECT_T dst_rect;
+//sq 		DISPMANX_RESOURCE_HANDLE_T tmp_res;
+//sq 	
+//sq 	    vc_dispmanx_rect_set( &dst_rect, 0, 0, 256, Height );
+//sq 	
+//sq 	    // blit image to the current resource
+//sq 	    vc_dispmanx_resource_write_data( cur_res, VC_IMAGE_RGB565, 256*2, screen, &dst_rect );
+//sq 	
+//sq 	    // begin display update
+//sq 	    dispman_update = vc_dispmanx_update_start( 0 );
+//sq 	
+//sq 	    // change element source to be the current resource
+//sq 	    vc_dispmanx_element_change_source( dispman_update, dispman_element, cur_res );
+//sq 	
+//sq 	    // finish display update, vsync is handled by software throttling
+//sq 	    // dispmanx avoids any tearing. vsync here would be limited to 30fps
+//sq 	    // on a CRT TV.
+//sq 	    vc_dispmanx_update_submit( dispman_update, 0, 0 );
+//sq 	
+//sq 	    // swap current resource
+//sq 	    tmp_res = cur_res;
+//sq 	    cur_res = prev_res;
+//sq 	    prev_res = tmp_res;
+//sq 	}
+
+    gles2_draw(display_width, display_height);
+    eglSwapBuffers(display, surface);
+
 
 	return(TRUE);
 }
@@ -831,17 +849,17 @@ void S9xSyncSpeed ()
 		}
 	}
 
-	// Delay until we're completed this frame.
-	// Can't use setitimer because the sound code already could be using it. We don't actually need it either.
-	while (timercmp(&next1, &now, >))
-	{
-		// If we're ahead of time, sleep a while.
-//sq		unsigned	timeleft = (next1.tv_sec - now.tv_sec) * 1000000 + next1.tv_usec - now.tv_usec;
-//sq		usleep(timeleft);
-
-		while (gettimeofday(&now, NULL) == -1) ;
-		// Continue with a while-loop because usleep() could be interrupted by a signal.
-	}
+//sq	// Delay until we're completed this frame.
+//sq	// Can't use setitimer because the sound code already could be using it. We don't actually need it either.
+//sq	while (timercmp(&next1, &now, >))
+//sq	{
+//sq		// If we're ahead of time, sleep a while.
+//sq//sq		unsigned	timeleft = (next1.tv_sec - now.tv_sec) * 1000000 + next1.tv_usec - now.tv_usec;
+//sq//sq		usleep(timeleft);
+//sq
+//sq		while (gettimeofday(&now, NULL) == -1) ;
+//sq		// Continue with a while-loop because usleep() could be interrupted by a signal.
+//sq	}
 
 	// Calculate the timestamp of the next frame.
 	next1.tv_usec += Settings.FrameTime;
@@ -1177,10 +1195,10 @@ void S9xParseConfigFile (void)
 	Settings.DisplayBorder = get_integer_conf("Graphics", "DisplayBorder", 0);
 
 	Settings.SkipFrames = get_integer_conf("Graphics", "AutoFrameskip", 1);
-	if (!Settings.SkipFrames)
+	if (Settings.SkipFrames)
 	  Settings.SkipFrames = get_integer_conf("Graphics", "Frameskip", AUTO_FRAMERATE);
 	else
-	  Settings.SkipFrames = AUTO_FRAMERATE;
+	  Settings.SkipFrames = 0;
 
 	Settings.Transparency = get_integer_conf("Graphics", "Transparency", TRUE);
 	i = get_integer_conf("Graphics", "CPUCycles", 100);

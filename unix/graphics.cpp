@@ -61,6 +61,10 @@
 //sq #include "keydef.h"
 
 #include <bcm_host.h>
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <assert.h>
+
 
 #define COUNT(a) (sizeof(a) / sizeof(a[0]))
 
@@ -86,6 +90,19 @@ SDL_Joystick *joy[2];
 
 uint16 *RGBconvert;
 extern uint32 xs, ys, cl, cs;
+
+void gles2_create();
+void gles2_destroy();
+void gles2_draw(int width, int height);
+void gles2_palette_changed();
+
+EGLDisplay display = NULL;
+EGLSurface surface = NULL;
+static EGLContext context = NULL;
+static EGL_DISPMANX_WINDOW_T nativewindow;
+//sq static SDL_Surface* screen = NULL;
+
+uint32_t display_width, display_height;
 
 #ifndef _ZAURUS
 int S9xMinCommandLineArgs ()
@@ -180,105 +197,198 @@ void S9xInitDisplay (int height)
 
 
 {
-    int ret;
-    uint32_t display_width, display_height;
-    uint32_t display_width_save, display_height_save;
-    float display_ratio,game_ratio;
+	int ret;
+//sq	uint32_t display_width_save, display_height_save;
+	float display_ratio,game_ratio;
 
-    uint32_t display_x=0, display_y=0;
+	uint32_t display_x=0, display_y=0;
 
-    VC_RECT_T dst_rect;
-    VC_RECT_T src_rect;
+	VC_RECT_T dst_rect;
+	VC_RECT_T src_rect;
 
-    graphics_get_display_size(0 /* LCD */, &display_width, &display_height);
 
-    dispman_display = vc_dispmanx_display_open( 0 );
+	// get an EGL display connection
+	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+	assert(display != EGL_NO_DISPLAY);
 
-    display_width_save = display_width;
-    display_height_save = display_height;
+	// initialize the EGL display connection
+	EGLBoolean result = eglInitialize(display, NULL, NULL);
+	assert(EGL_FALSE != result);
 
-    // Add border around bitmap for TV
-    display_width -= Settings.DisplayBorder * 2;
-    display_height -= Settings.DisplayBorder * 2;
+	// get an appropriate EGL frame buffer configuration
+	EGLint num_config;
+	EGLConfig config;
+	static const EGLint attribute_list[] =
+	{
+	    EGL_RED_SIZE, 8,
+	    EGL_GREEN_SIZE, 8,
+	    EGL_BLUE_SIZE, 8,
+	    EGL_ALPHA_SIZE, 8,
+	    EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+	    EGL_NONE
+	};
+	result = eglChooseConfig(display, attribute_list, &config, 1, &num_config);
+	assert(EGL_FALSE != result);
 
-    //Create two surfaces for flipping between
-    //Make sure bitmap type matches the source for better performance
-    uint32_t crap;
-    resource0 = vc_dispmanx_resource_create(VC_IMAGE_RGB565, width, height, &crap);
-    resource1 = vc_dispmanx_resource_create(VC_IMAGE_RGB565, width, height, &crap);
+	result = eglBindAPI(EGL_OPENGL_ES_API);
+	assert(EGL_FALSE != result);
 
-    //Create a blank background for the whole screen, make sure width is divisible by 32!
-    resource_bg = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 128, 128, &crap);
+	// create an EGL rendering context
+	static const EGLint context_attributes[] =
+	{
+	    EGL_CONTEXT_CLIENT_VERSION, 2,
+	    EGL_NONE
+	};
+	context = eglCreateContext(display, config, EGL_NO_CONTEXT, context_attributes);
+	assert(context != EGL_NO_CONTEXT);
 
-	if(Settings.MaintainAspectRatio) {
-	    // Work out the position and size on the display
-	    display_ratio = (float)display_width/(float)display_height;
-	    game_ratio = (float)width/(float)height;
-	
-	    display_x = display_width;
-	    display_y = display_height;
-	
-	    if (game_ratio>display_ratio) {
-	        display_height = (float)display_width/(float)game_ratio;
-	    } else {
-	        display_width = display_height*(float)game_ratio;;
-	    }
-	
-	    // Centre bitmap on screen
-	    display_x = (display_x - display_width) / 2;
-	    display_y = (display_y - display_height) / 2;
 
-	} 
-	else {
-		display_x = 0;
-		display_y = 0;
-	}
+	// create an EGL window surface
+	int32_t success = graphics_get_display_size(0, &display_width, &display_height);
+	assert(success >= 0);
 
-	if(!Settings.StretchVideo) {
-		display_width = width;
-		display_height = height;
-		display_x = (display_width_save - display_width) / 2;
-		display_y = (display_height_save - display_height) / 2;
-	}
+	dst_rect.x = 0;
+	dst_rect.y = 0;
+	dst_rect.width = display_width;
+	dst_rect.height = display_height;
 
-    vc_dispmanx_rect_set( &dst_rect, display_x + Settings.DisplayBorder, display_y + Settings.DisplayBorder,
-                                display_width, display_height);
-    vc_dispmanx_rect_set( &src_rect, 0, 0, width << 16, height << 16);
+	src_rect.x = 0;
+	src_rect.y = 0;
+	src_rect.width = display_width << 16;
+	src_rect.height = display_height << 16;
 
-    dispman_update = vc_dispmanx_update_start( 0 );
 
-    // create the 'window' element - based on the first buffer resource (resource0)
-    dispman_element = vc_dispmanx_element_add(  dispman_update,
-                                         dispman_display,
-                                         10,
-                                         &dst_rect,
-                                         resource0,
-                                         &src_rect,
-                                         DISPMANX_PROTECTION_NONE,
-                                         0,
-                                         0,
-                                         (DISPMANX_TRANSFORM_T) 0 );
+	DISPMANX_DISPLAY_HANDLE_T dispman_display = vc_dispmanx_display_open(0);
+	DISPMANX_UPDATE_HANDLE_T dispman_update = vc_dispmanx_update_start(0);
+	DISPMANX_ELEMENT_HANDLE_T dispman_element = vc_dispmanx_element_add(dispman_update, dispman_display,
+	  				10, &dst_rect, 0, &src_rect, 
+					DISPMANX_PROTECTION_NONE, NULL, NULL, DISPMANX_NO_ROTATE);
 
-    vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width_save, display_height_save );
-    vc_dispmanx_rect_set( &src_rect, 0, 0, 128 << 16, 128 << 16);
+	vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height );
+	vc_dispmanx_rect_set( &src_rect, 0, 0, 128 << 16, 128 << 16);
+ 
+	//Create a blank background for the whole screen, make sure width is divisible by 32!
+	uint32_t crap;
+	resource_bg = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 128, 128, &crap);
+	dispman_element_bg = vc_dispmanx_element_add(  dispman_update,
+	                                      dispman_display,
+	                                      9,
+	                                      &dst_rect,
+	                                      resource_bg,
+	                                      &src_rect,
+	                                      DISPMANX_PROTECTION_NONE,
+	                                      0,
+	                                      0,
+	                                      (DISPMANX_TRANSFORM_T) 0 );
 
-    //Create a blank background to cover the whole screen
-    dispman_element_bg = vc_dispmanx_element_add(  dispman_update,
-                                         dispman_display,
-                                         9,
-                                         &dst_rect,
-                                         resource_bg,
-                                         &src_rect,
-                                         DISPMANX_PROTECTION_NONE,
-                                         0,
-                                         0,
-                                         (DISPMANX_TRANSFORM_T) 0 );
+	nativewindow.element = dispman_element;
+	nativewindow.width = display_width;
+	nativewindow.height = display_height;
+	vc_dispmanx_update_submit_sync(dispman_update);
 
-    ret = vc_dispmanx_update_submit_sync( dispman_update );
+	surface = eglCreateWindowSurface(display, config, &nativewindow, NULL);
+	assert(surface != EGL_NO_SURFACE);
 
-    // setup swapping of double buffers
-    cur_res = resource1;
-    prev_res = resource0;
+	// connect the context to the surface
+	result = eglMakeCurrent(display, surface, surface, context);
+	assert(EGL_FALSE != result);
+
+//sq	eglSwapInterval(display, 0);
+
+	gles2_create();
+
+
+
+
+
+
+//sq     dispman_display = vc_dispmanx_display_open( 0 );
+//sq 
+//sq     display_width_save = display_width;
+//sq     display_height_save = display_height;
+//sq 
+//sq     // Add border around bitmap for TV
+//sq     display_width -= Settings.DisplayBorder * 2;
+//sq     display_height -= Settings.DisplayBorder * 2;
+//sq 
+//sq     //Create two surfaces for flipping between
+//sq     //Make sure bitmap type matches the source for better performance
+//sq     uint32_t crap;
+//sq     resource0 = vc_dispmanx_resource_create(VC_IMAGE_RGB565, width, height, &crap);
+//sq     resource1 = vc_dispmanx_resource_create(VC_IMAGE_RGB565, width, height, &crap);
+//sq 
+//sq     //Create a blank background for the whole screen, make sure width is divisible by 32!
+//sq     resource_bg = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 128, 128, &crap);
+//sq 
+//sq 	if(Settings.MaintainAspectRatio) {
+//sq 	    // Work out the position and size on the display
+//sq 	    display_ratio = (float)display_width/(float)display_height;
+//sq 	    game_ratio = (float)width/(float)height;
+//sq 	
+//sq 	    display_x = display_width;
+//sq 	    display_y = display_height;
+//sq 	
+//sq 	    if (game_ratio>display_ratio) {
+//sq 	        display_height = (float)display_width/(float)game_ratio;
+//sq 	    } else {
+//sq 	        display_width = display_height*(float)game_ratio;;
+//sq 	    }
+//sq 	
+//sq 	    // Centre bitmap on screen
+//sq 	    display_x = (display_x - display_width) / 2;
+//sq 	    display_y = (display_y - display_height) / 2;
+//sq 
+//sq 	} 
+//sq 	else {
+//sq 		display_x = 0;
+//sq 		display_y = 0;
+//sq 	}
+//sq 
+//sq 	if(!Settings.StretchVideo) {
+//sq 		display_width = width;
+//sq 		display_height = height;
+//sq 		display_x = (display_width_save - display_width) / 2;
+//sq 		display_y = (display_height_save - display_height) / 2;
+//sq 	}
+//sq 
+//sq     vc_dispmanx_rect_set( &dst_rect, display_x + Settings.DisplayBorder, display_y + Settings.DisplayBorder,
+//sq                                 display_width, display_height);
+//sq     vc_dispmanx_rect_set( &src_rect, 0, 0, width << 16, height << 16);
+//sq 
+//sq     dispman_update = vc_dispmanx_update_start( 0 );
+//sq 
+//sq     // create the 'window' element - based on the first buffer resource (resource0)
+//sq     dispman_element = vc_dispmanx_element_add(  dispman_update,
+//sq                                          dispman_display,
+//sq                                          10,
+//sq                                          &dst_rect,
+//sq                                          resource0,
+//sq                                          &src_rect,
+//sq                                          DISPMANX_PROTECTION_NONE,
+//sq                                          0,
+//sq                                          0,
+//sq                                          (DISPMANX_TRANSFORM_T) 0 );
+//sq 
+//sq     vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width_save, display_height_save );
+//sq     vc_dispmanx_rect_set( &src_rect, 0, 0, 128 << 16, 128 << 16);
+//sq 
+//sq     //Create a blank background to cover the whole screen
+//sq     dispman_element_bg = vc_dispmanx_element_add(  dispman_update,
+//sq                                          dispman_display,
+//sq                                          9,
+//sq                                          &dst_rect,
+//sq                                          resource_bg,
+//sq                                          &src_rect,
+//sq                                          DISPMANX_PROTECTION_NONE,
+//sq                                          0,
+//sq                                          0,
+//sq                                          (DISPMANX_TRANSFORM_T) 0 );
+//sq 
+//sq     ret = vc_dispmanx_update_submit_sync( dispman_update );
+//sq 
+//sq     // setup swapping of double buffers
+//sq     cur_res = resource1;
+//sq     prev_res = resource0;
 }
 
 
@@ -290,12 +400,12 @@ void S9xDeinitDisplay ()
 	int i;
 	free(screen);
 
-    dispman_update = vc_dispmanx_update_start( 0 );
-    ret = vc_dispmanx_element_remove( dispman_update, dispman_element );
-    ret = vc_dispmanx_update_submit_sync( dispman_update );
-    ret = vc_dispmanx_resource_delete( resource0 );
-    ret = vc_dispmanx_resource_delete( resource1 );
-    ret = vc_dispmanx_display_close( dispman_display );
+//sq     dispman_update = vc_dispmanx_update_start( 0 );
+//sq     ret = vc_dispmanx_element_remove( dispman_update, dispman_element );
+//sq     ret = vc_dispmanx_update_submit_sync( dispman_update );
+//sq     ret = vc_dispmanx_resource_delete( resource0 );
+//sq     ret = vc_dispmanx_resource_delete( resource1 );
+//sq     ret = vc_dispmanx_display_close( dispman_display );
 
 	for(i=0;i<2;i++)
 	{
@@ -304,7 +414,16 @@ void S9xDeinitDisplay ()
 	}
 
 	SDL_Quit();
-	bcm_host_deinit();
+//sq	bcm_host_deinit();
+
+    gles2_destroy();
+    // Release OpenGL resources
+    eglMakeCurrent( display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT );
+    eglDestroySurface( display, surface );
+    eglDestroyContext( display, context );
+    eglTerminate( display );
+    bcm_host_deinit();
+
 
 	free(GFX.SubScreen);
 	free(GFX.ZBuffer);
