@@ -336,9 +336,10 @@ struct SSettings{
     bool8_32  TurboMode;
     uint32 TurboSkipFrames;
     uint32 AutoMaxSkipFrames;
-    bool8_32  StretchVideo;
+    bool8_32  DisplaySmoothStretch;
     bool8_32  MaintainAspectRatio;
-    bool8_32  DisplayBorder;
+    uint32    DisplayBorder;
+	uint32    DisplayEffect;
     
 // Fixes for individual games
     uint32 StrikeGunnerOffsetHack;
