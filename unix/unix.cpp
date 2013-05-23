@@ -149,15 +149,10 @@ static uint32 ffc = 0;
 bool8_32 nso = FALSE, vga = FALSE;
 uint32 xs = 256, ys = 240, cl = 0, cs = 0, mfs = 10;
 
-extern uint32_t display_width, display_height;
-void gles2_create();
-void gles2_destroy();
-void gles2_draw(int width, int height);
-void gles2_palette_changed();
+void gles2_draw(short *screen, int width, int height);
 
 extern EGLDisplay display;
 extern EGLSurface surface;
-
 
 char *rom_filename = NULL;
 char *snapshot_filename = NULL;
@@ -319,10 +314,11 @@ int main (int argc, char **argv)
 	Settings.ApplyCheats = TRUE;
 	Settings.TurboMode = FALSE;
 	Settings.TurboSkipFrames = 0;
-	Settings.StretchVideo = 1;
+	Settings.DisplaySmoothStretch = 1;
 	Settings.MaintainAspectRatio = 1;
 	Settings.DisplayBorder = 0;
 	Settings.InterpolatedSound = 0;
+	Settings.DisplayEffect = 0;
 
 	//Override defaults from the config file
 	S9xParseConfigFile();
@@ -696,7 +692,7 @@ bool8_32 S9xDeinitUpdate (int Width, int Height)
 //sq 	    prev_res = tmp_res;
 //sq 	}
 
-    gles2_draw(display_width, display_height);
+    gles2_draw(screen, 256, Height);
     eglSwapBuffers(display, surface);
 
 
@@ -1190,9 +1186,11 @@ void S9xParseConfigFile (void)
 
 	open_config_file();
 
-	Settings.StretchVideo = get_integer_conf("Graphics", "StretchVideo", 1);
+	Settings.DisplaySmoothStretch = get_integer_conf("Graphics", "DisplaySmoothStretch", 1);
 	Settings.MaintainAspectRatio = get_integer_conf("Graphics", "MaintainAspectRatio", 1);
 	Settings.DisplayBorder = get_integer_conf("Graphics", "DisplayBorder", 0);
+
+	Settings.DisplayEffect = get_integer_conf("Graphics", "DisplayEffect", 0);
 
 	Settings.SkipFrames = get_integer_conf("Graphics", "AutoFrameskip", 1);
 	if (Settings.SkipFrames)

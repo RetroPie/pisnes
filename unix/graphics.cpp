@@ -91,9 +91,9 @@ SDL_Joystick *joy[2];
 uint16 *RGBconvert;
 extern uint32 xs, ys, cl, cs;
 
-void gles2_create();
+void gles2_create(int display_width, int display_height, int bitmap_width, int bitmap_height);
 void gles2_destroy();
-void gles2_draw(int width, int height);
+void gles2_draw(short *screen);
 void gles2_palette_changed();
 
 EGLDisplay display = NULL;
@@ -295,10 +295,7 @@ void S9xInitDisplay (int height)
 
 //sq	eglSwapInterval(display, 0);
 
-	gles2_create();
-
-
-
+	gles2_create(display_width, display_height, width, height);
 
 
 

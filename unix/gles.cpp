@@ -30,12 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-float op_zoom = 1.0f;
-
-int video_smooth = 1;
-
-extern unsigned short *screen;
+#include <snes9x.h>
 
 //IMPORTANT, make sure this function is commented out at runtime
 //as it has a big performance impact!
@@ -115,18 +110,18 @@ static const char* fragment_shader_phospher =
 
 // Bilinear smoothing, required when using palette as
 // automatic smoothing won't work.
-static const char* fragment_shader_smooth =
-	"varying mediump vec2 v_texcoord;												\n"
-	"uniform sampler2D u_texture;													\n"
-	"void main()																	\n"
-	"{																				\n"
-	"	vec4 p0 = texture2D(u_texture, v_texcoord);									\n" 
-	"	vec4 p1 = texture2D(u_texture, v_texcoord + vec2(1.0/512.0, 0)); 			\n"
-	"	vec4 p2 = texture2D(u_texture, v_texcoord + vec2(0, 1.0/256.0)); 			\n"
-	"	vec4 p3 = texture2D(u_texture, v_texcoord + vec2(1.0/512.0, 1.0/256.0)); 	\n"
-	"	vec2 l = vec2(fract(512.0*v_texcoord.x), fract(256.0*v_texcoord.y)); 		\n"
-	"	gl_FragColor = mix(mix(c0, c1, l.x), mix(c2, c3, l.x), l.y); 				\n"
-	"}																				\n";
+//static const char* fragment_shader_smooth =
+//	"varying mediump vec2 v_texcoord;												\n"
+//	"uniform sampler2D u_texture;													\n"
+//	"void main()																	\n"
+//	"{																				\n"
+//	"	vec4 p0 = texture2D(u_texture, v_texcoord);									\n" 
+//	"	vec4 p1 = texture2D(u_texture, v_texcoord + vec2(1.0/512.0, 0)); 			\n"
+//	"	vec4 p2 = texture2D(u_texture, v_texcoord + vec2(0, 1.0/256.0)); 			\n"
+//	"	vec4 p3 = texture2D(u_texture, v_texcoord + vec2(1.0/512.0, 1.0/256.0)); 	\n"
+//	"	vec2 l = vec2(fract(512.0*v_texcoord.x), fract(256.0*v_texcoord.y)); 		\n"
+//	"	gl_FragColor = mix(mix(c0, c1, l.x), mix(c2, c3, l.x), l.y); 				\n"
+//	"}																				\n";
 
 static const GLfloat vertices[] =
 {
@@ -136,26 +131,8 @@ static const GLfloat vertices[] =
 	-0.5f, +0.5f, 0.0f,
 };
 
-#define	TEX_WIDTH	512
-#define	TEX_HEIGHT	448
-//sq #define	WIDTH		Screen_WIDTH
-//sq #define	HEIGHT		Screen_HEIGHT
-#define	WIDTH		256
-#define	HEIGHT		224
-
-//Define the rectangle that is drawn
-#define	min_u		0.0f
-#define	max_u		(float)WIDTH/TEX_WIDTH
-#define	min_v		0.0f
-#define	max_v		(float)HEIGHT/TEX_HEIGHT
-
-static const GLfloat uvs[] =
-{
-	min_u, min_v,
-	max_u, min_v,
-	max_u, max_v,
-	min_u, max_v,
-};
+//Values defined in gles2_create()
+static GLfloat uvs[8];
 
 static const GLushort indices[] =
 {
@@ -250,6 +227,18 @@ static GLuint CreateProgram(const char *vertex_shader_src, const char *fragment_
 	return program_object;
 }
 
+static void SetOrtho(float m[4][4], float left, float right, float bottom, float top, float near, float far, float scale_x, float scale_y)
+{
+	memset(m, 0, 4*4*sizeof(float));
+	m[0][0] = 2.0f/(right - left)*scale_x;
+	m[1][1] = 2.0f/(top - bottom)*scale_y;
+	m[2][2] = -2.0f/(far - near);
+	m[3][0] = -(right + left)/(right - left);
+	m[3][1] = -(top + bottom)/(top - bottom);
+	m[3][2] = -(far + near)/(far - near);
+	m[3][3] = 1;
+}
+
 typedef	struct ShaderInfo {
 		GLuint program;
 		GLint a_position;
@@ -262,12 +251,34 @@ static ShaderInfo shader;
 static GLuint buffers[3];
 static GLuint textures[2];
 
-void gles2_create()
+static int dis_width;
+static int dis_height;
+static float proj[4][4];
+static float tex_width, tex_height;
+
+void gles2_create(int display_width, int display_height, int bitmap_width, int bitmap_height)
 {
+	tex_width = bitmap_width*2;
+	tex_height = bitmap_height*2;
+
+	float min_u=0.0f;
+	float max_u=(float)bitmap_width/tex_width;
+	float min_v=0.0f;
+	float max_v=(float)bitmap_height/tex_height;
+
+	float op_zoom = (float)(display_width-Settings.DisplayBorder)/(float)display_width;
+	
 	memset(&shader, 0, sizeof(ShaderInfo));
-	shader.program = CreateProgram(vertex_shader, fragment_shader_none);
-	//sq shader.program = CreateProgram(vertex_shader, fragment_shader_scanline);
-	//sq shader.program = CreateProgram(vertex_shader, fragment_shader_phospher);
+
+	if(Settings.DisplayEffect == 0)
+		shader.program = CreateProgram(vertex_shader, fragment_shader_none);
+	else if (Settings.DisplayEffect == 1)
+		shader.program = CreateProgram(vertex_shader, fragment_shader_scanline);
+	else if (Settings.DisplayEffect == 2)
+		shader.program = CreateProgram(vertex_shader, fragment_shader_phospher);
+	else
+		shader.program = CreateProgram(vertex_shader, fragment_shader_none);
+	
 	if(shader.program)
 	{
 		shader.a_position	= glGetAttribLocation(shader.program,	"a_position");
@@ -279,7 +290,16 @@ void gles2_create()
 
 	glGenTextures(2, textures);	SHOW_ERROR
 	glBindTexture(GL_TEXTURE_2D, textures[0]); SHOW_ERROR
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TEX_WIDTH, TEX_HEIGHT, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL); SHOW_ERROR
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_width, tex_height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL); SHOW_ERROR
+
+	uvs[0] = min_u;
+	uvs[1] = min_v;
+	uvs[2] = max_u;
+	uvs[3] = min_v;
+	uvs[4] = max_u;
+	uvs[5] = max_v;
+	uvs[6] = min_u;
+	uvs[7] = max_v;
 
 	glGenBuffers(3, buffers); SHOW_ERROR
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]); SHOW_ERROR
@@ -294,6 +314,25 @@ void gles2_create()
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f); SHOW_ERROR
 	glDisable(GL_DEPTH_TEST); SHOW_ERROR
 	glDisable(GL_DITHER); SHOW_ERROR
+
+	float sx = 1.0f, sy = 1.0f;
+
+	dis_width = display_width;
+	dis_height = display_height;
+
+	// Screen aspect ratio adjustment
+	if(Settings.MaintainAspectRatio)
+	{
+		float a = (float)display_width/(float)display_height;
+		float a0 = (float)bitmap_width/(float)bitmap_height;
+		if(a > a0)
+			sx = a0/a;
+		else
+			sy = a/a0;
+	}
+
+	//Set the dimensions for displaying the texture(bitmap) on the screen
+	SetOrtho(proj, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx*op_zoom, sy*op_zoom);
 }
 
 void gles2_destroy()
@@ -304,23 +343,11 @@ void gles2_destroy()
 	glDeleteTextures(2, textures); SHOW_ERROR
 }
 
-static void SetOrtho(float m[4][4], float left, float right, float bottom, float top, float near, float far, float scale_x, float scale_y)
-{
-	memset(m, 0, 4*4*sizeof(float));
-	m[0][0] = 2.0f/(right - left)*scale_x;
-	m[1][1] = 2.0f/(top - bottom)*scale_y;
-	m[2][2] = -2.0f/(far - near);
-	m[3][0] = -(right + left)/(right - left);
-	m[3][1] = -(top + bottom)/(top - bottom);
-	m[3][2] = -(far + near)/(far - near);
-	m[3][3] = 1;
-}
-
 static void gles2_DrawQuad(const ShaderInfo *sh, GLuint textures[2])
 {
 	glUniform1i(sh->u_texture, 0); SHOW_ERROR
 
-	if (video_smooth) {
+	if (Settings.DisplaySmoothStretch) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); SHOW_ERROR 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); SHOW_ERROR
 	}
@@ -344,33 +371,20 @@ static void gles2_DrawQuad(const ShaderInfo *sh, GLuint textures[2])
 
 inline unsigned short BGR565(unsigned char r, unsigned char g, unsigned char b) { return ((r&~7) << 8)|((g&~3) << 3)|(b >> 3); }
 
-void gles2_draw(int _w, int _h)
+void gles2_draw(short *screen, int width, int height)
 {
 	if(!shader.program) return;
 
-	float sx = 1.0f, sy = 1.0f;
-
-	// Screen aspect ratio adjustment
-	float a = (float)_w/_h;
-	//sq float a0 = 336.0f/240.0f;
-	float a0 = 256.0f/224.0f;
-	if(a > a0)
-		sx = a0/a;
-	else
-		sy = a/a0;
-
 	glClear(GL_COLOR_BUFFER_BIT); SHOW_ERROR
-	glViewport(0, 0, _w, _h); SHOW_ERROR
+	glViewport(0, 0, dis_width, dis_height); SHOW_ERROR
 
-	float proj[4][4];
 	glDisable(GL_BLEND); SHOW_ERROR
 	glUseProgram(shader.program); SHOW_ERROR
-	SetOrtho(proj, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx*op_zoom, sy*op_zoom);
 	glUniformMatrix4fv(shader.u_vp_matrix, 1, GL_FALSE, &proj[0][0]); SHOW_ERROR
 
 	glActiveTexture(GL_TEXTURE0); SHOW_ERROR
 	glBindTexture(GL_TEXTURE_2D, textures[0]); SHOW_ERROR
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, screen); SHOW_ERROR
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, screen); SHOW_ERROR
 	gles2_DrawQuad(&shader, textures);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0); SHOW_ERROR
