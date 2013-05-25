@@ -92,21 +92,6 @@ pthread_mutex_t mutex;
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
-
-// create two resources for 'page flipping'
-extern DISPMANX_RESOURCE_HANDLE_T   resource0;
-extern DISPMANX_RESOURCE_HANDLE_T   resource1;
-extern DISPMANX_RESOURCE_HANDLE_T   resource_bg;
-
-// these are used for switching between the buffers
-extern DISPMANX_RESOURCE_HANDLE_T cur_res;
-extern DISPMANX_RESOURCE_HANDLE_T prev_res;
-
-extern DISPMANX_ELEMENT_HANDLE_T dispman_element;
-extern DISPMANX_ELEMENT_HANDLE_T dispman_element_bg;
-extern DISPMANX_DISPLAY_HANDLE_T dispman_display;
-extern DISPMANX_UPDATE_HANDLE_T dispman_update;
-
 typedef struct alsa
 {
 	snd_pcm_t *pcm;
@@ -666,35 +651,9 @@ bool8_32 S9xDeinitUpdate (int Width, int Height)
 	if (GFX.InfoString)
 	    S9xDisplayString (GFX.InfoString, (uint8 *)screen, 512);
 
-//sq 	{
-//sq 	    VC_RECT_T dst_rect;
-//sq 		DISPMANX_RESOURCE_HANDLE_T tmp_res;
-//sq 	
-//sq 	    vc_dispmanx_rect_set( &dst_rect, 0, 0, 256, Height );
-//sq 	
-//sq 	    // blit image to the current resource
-//sq 	    vc_dispmanx_resource_write_data( cur_res, VC_IMAGE_RGB565, 256*2, screen, &dst_rect );
-//sq 	
-//sq 	    // begin display update
-//sq 	    dispman_update = vc_dispmanx_update_start( 0 );
-//sq 	
-//sq 	    // change element source to be the current resource
-//sq 	    vc_dispmanx_element_change_source( dispman_update, dispman_element, cur_res );
-//sq 	
-//sq 	    // finish display update, vsync is handled by software throttling
-//sq 	    // dispmanx avoids any tearing. vsync here would be limited to 30fps
-//sq 	    // on a CRT TV.
-//sq 	    vc_dispmanx_update_submit( dispman_update, 0, 0 );
-//sq 	
-//sq 	    // swap current resource
-//sq 	    tmp_res = cur_res;
-//sq 	    cur_res = prev_res;
-//sq 	    prev_res = tmp_res;
-//sq 	}
-
+	//Draw to the screen
     gles2_draw(screen, 256, Height);
     eglSwapBuffers(display, surface);
-
 
 	return(TRUE);
 }
@@ -845,6 +804,7 @@ void S9xSyncSpeed ()
 		}
 	}
 
+	//This isn't required now as the vsync is in effect for GLES2
 //sq	// Delay until we're completed this frame.
 //sq	// Can't use setitimer because the sound code already could be using it. We don't actually need it either.
 //sq	while (timercmp(&next1, &now, >))
