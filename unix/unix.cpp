@@ -805,17 +805,14 @@ void S9xSyncSpeed ()
 	}
 
 	//This isn't required now as the vsync is in effect for GLES2
-//sq	// Delay until we're completed this frame.
-//sq	// Can't use setitimer because the sound code already could be using it. We don't actually need it either.
-//sq	while (timercmp(&next1, &now, >))
-//sq	{
-//sq		// If we're ahead of time, sleep a while.
-//sq//sq		unsigned	timeleft = (next1.tv_sec - now.tv_sec) * 1000000 + next1.tv_usec - now.tv_usec;
-//sq//sq		usleep(timeleft);
-//sq
-//sq		while (gettimeofday(&now, NULL) == -1) ;
-//sq		// Continue with a while-loop because usleep() could be interrupted by a signal.
-//sq	}
+	// Delay until we're completed this frame.
+	// Can't use setitimer because the sound code already could be using it. We don't actually need it either.
+	while (timercmp(&next1, &now, >))
+	{
+		// If we're ahead of time, sleep a while.
+		while (gettimeofday(&now, NULL) == -1) ;
+		// Continue with a while-loop because usleep() could be interrupted by a signal.
+	}
 
 	// Calculate the timestamp of the next frame.
 	next1.tv_usec += Settings.FrameTime;
