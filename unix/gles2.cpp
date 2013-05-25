@@ -1,10 +1,8 @@
 /*
- * video.c - Raspberry Pi suport by djdron
  *
- * Copyright (c) 2013 Atari800 development team (see DOC/CREDITS)
- *
- * This file is part of the Atari800 emulator project which emulates
- * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
+ * This file is based on the Atari800 emulator project which emulates
+ * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers. Copyright 
+ * (c) 2013 Atari800 development team.
  *
  * This file is based on Portable ZX-Spectrum emulator.
  * Copyright (C) 2001-2012 SMT, Dexus, Alone Coder, deathsoft, djdron, scor
