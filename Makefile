@@ -35,7 +35,7 @@ OBJECTS=$(CPUOBJ) $(FXOBJ) $(C4OBJ) \
 	memmap.o ppu.o dma.o unix/unix.o \
 	$(SOUNDOBJ) unix/graphics.o dsp1.o \
     snes9x.o snapshot.o data.o globals.o \
-	unix/gles.o \
+	unix/gles2.o \
 	$(KREEDOBJ)
 
 ifdef NETPLAY
