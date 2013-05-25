@@ -71,8 +71,7 @@ as PiSNES is very CPU intensive and overclocking will make most games run at ful
 
 My overclocking settings which work well, (/boot/config.txt)
 {{{
-arm_freq=950
-core_freq=350
+arm_freq=900
 sdram_freq=500
 }}}
 
@@ -102,6 +101,9 @@ Composite output, try removing/commenting out the "overscan_" parameters from "/
 #overscan_bottom=16
 }}}
 
+*GRAPHICS EFFECTS*
+Postprocessing can be enabled by setting "DisplayEffect" in snes9x.cfg. In addition you can disable anti-aliasing smoothing ("DisplaySmoothStretch" in snes9x.cfg). The postprocessing "phospher" effect does not run at full speed - i.e. it taxes the Pi GPU a little too much.
+
 *ORIGINAL CREDITS*
 
   * The SNES9X team for their wonderful emulator (http://www.snes9x.com/)
@@ -112,6 +114,11 @@ Composite output, try removing/commenting out the "overscan_" parameters from "/
   * Based on the Dingoo SDL version of SNES9X v1.39
 
 *CHANGE LOG*
+
+_May 25, 2013:_
+  * Graphics backend rewritten to use GLES2 instead of Dispmanx, to enable GPU postprocessing.
+  * Graphics smoothing (anti-aliasing) can be disabled.
+  * Added postprocessing graphics effects, i.e. scanlines, phospher.
 
 _May 11, 2013:_
   * Added joystick button presses SELECT+TL quickload, SELECT+TR quicksave.
