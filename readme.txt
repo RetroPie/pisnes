@@ -90,6 +90,7 @@ is causing the issues as it has problems with the ALSA drivers. To fix
 this simply remove PulseAudio:
 {{{
 sudo apt-get --purge remove pulseaudio
+sudo apt-get autoremove
 }}}
 
 If you're getting a black screen when running in Console mode with
@@ -102,6 +103,7 @@ Composite output, try removing/commenting out the "overscan_" parameters from "/
 }}}
 
 *GRAPHICS EFFECTS*
+
 Postprocessing can be enabled by setting "DisplayEffect" in snes9x.cfg. In addition you can disable anti-aliasing smoothing ("DisplaySmoothStretch" in snes9x.cfg). The postprocessing "phospher" effect does not run at full speed - i.e. it taxes the Pi GPU a little too much.
 
 *ORIGINAL CREDITS*
