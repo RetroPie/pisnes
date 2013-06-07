@@ -121,6 +121,7 @@ _May 25, 2013:_
   * Graphics backend rewritten to use GLES2 instead of Dispmanx, to enable GPU postprocessing.
   * Graphics smoothing (anti-aliasing) can be disabled.
   * Added postprocessing graphics effects, i.e. scanlines, phospher.
+  * Vsync support is better meaning less stuttering.
 
 _May 11, 2013:_
   * Added joystick button presses SELECT+TL quickload, SELECT+TR quicksave.
