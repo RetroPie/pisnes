@@ -30,6 +30,9 @@ QUIT=5
 ACCEL=7
 QLOAD=10
 QSAVE=11
+#Joystick axis
+JA_LR=0
+JA_UD=1
 
 [Graphics]
 DisplaySmoothStretch=1
