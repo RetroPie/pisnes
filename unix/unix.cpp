@@ -120,6 +120,8 @@ int OldSkipFrame;
 uint8 joy_buttons[2][32];
 uint8 joy_axes[2][8];
 
+int joyaxis_LR, joyaxis_UD;
+
 void InitTimer ();
 void *S9xProcessSound (void *);
 void S9xParseConfigFile (void);
@@ -485,6 +487,10 @@ void S9xInitInputDevices ()
 	sfc_joy[QLOAD] = get_integer_conf("Joystick", "QLOAD", RPI_JOY_QLOAD);
 	sfc_joy[QSAVE] = get_integer_conf("Joystick", "QSAVE", RPI_JOY_QSAVE);
 
+	//Read joystick axis to use, default to 0 & 1
+	joyaxis_LR = get_integer_conf("Joystick", "JA_LR", 0);
+	joyaxis_UD = get_integer_conf("Joystick", "JA_UD", 1);
+
 	close_config_file();
 }
 	
@@ -840,24 +846,22 @@ void S9xProcessEvents (bool8_32 block)
 			joy_buttons[event.jbutton.which][event.jbutton.button] = 0;
 			break;
         case SDL_JOYAXISMOTION:
-            switch(event.jaxis.axis) {
-                case JA_LR:
-                    if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
-                        joy_axes[event.jbutton.which][JA_LR] = CENTER;
-                    else if(event.jaxis.value > 10000)
-                        joy_axes[event.jbutton.which][JA_LR] = RIGHT;
-                    else
-                        joy_axes[event.jbutton.which][JA_LR] = LEFT;
-                break;
-                case JA_UD:
-                    if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
-                        joy_axes[event.jbutton.which][JA_UD] = CENTER;
-                    else if(event.jaxis.value > 10000)
-                        joy_axes[event.jbutton.which][JA_UD] = DOWN;
-                    else
-                        joy_axes[event.jbutton.which][JA_UD] = UP;
-                break;
-            }
+			if(event.jaxis.axis == joyaxis_LR) {
+				if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
+					joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
+				else if(event.jaxis.value > 10000)
+					joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
+				else
+					joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
+			}
+			if(event.jaxis.axis == joyaxis_UD) {
+				if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
+					joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
+				else if(event.jaxis.value > 10000)
+					joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
+				else
+					joy_axes[event.jbutton.which][joyaxis_UD] = UP;
+			}
             break;
 		case SDL_KEYDOWN:
 			keyssnes = SDL_GetKeyState(NULL);
@@ -1110,10 +1114,10 @@ uint32 S9xReadJoypad (int which1)
 		if (keyssnes[sfc_key[A_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[A_1]])		val |= SNES_A_MASK;
 		if (keyssnes[sfc_key[START_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[START_1]])	val |= SNES_START_MASK;
 		if (keyssnes[sfc_key[SELECT_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[SELECT_1]])	val |= SNES_SELECT_MASK;
-		if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_axes[which1][JA_UD] == UP)		val |= SNES_UP_MASK;
-		if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[which1][JA_UD] == DOWN)	val |= SNES_DOWN_MASK;
-		if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[which1][JA_LR] == LEFT)	val |= SNES_LEFT_MASK;
-		if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[which1][JA_LR] == RIGHT)	val |= SNES_RIGHT_MASK;
+		if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_UD] == UP)		val |= SNES_UP_MASK;
+		if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_UD] == DOWN)	val |= SNES_DOWN_MASK;
+		if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_LR] == LEFT)	val |= SNES_LEFT_MASK;
+		if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_LR] == RIGHT)	val |= SNES_RIGHT_MASK;
 	} else {
 		if (joy_buttons[which1][sfc_joy[L_1]])		val |= SNES_TL_MASK;
 		if (joy_buttons[which1][sfc_joy[R_1]])		val |= SNES_TR_MASK;
@@ -1123,10 +1127,10 @@ uint32 S9xReadJoypad (int which1)
 		if (joy_buttons[which1][sfc_joy[A_1]])		val |= SNES_A_MASK;
 		if (joy_buttons[which1][sfc_joy[START_1]])	val |= SNES_START_MASK;
 		if (joy_buttons[which1][sfc_joy[SELECT_1]])	val |= SNES_SELECT_MASK;
-		if (joy_axes[which1][JA_UD] == UP)			val |= SNES_UP_MASK;
-		if (joy_axes[which1][JA_UD] == DOWN)		val |= SNES_DOWN_MASK;
-		if (joy_axes[which1][JA_LR] == LEFT)		val |= SNES_LEFT_MASK;
-		if (joy_axes[which1][JA_LR] == RIGHT)		val |= SNES_RIGHT_MASK;
+		if (joy_axes[which1][joyaxis_UD] == UP)			val |= SNES_UP_MASK;
+		if (joy_axes[which1][joyaxis_UD] == DOWN)		val |= SNES_DOWN_MASK;
+		if (joy_axes[which1][joyaxis_LR] == LEFT)		val |= SNES_LEFT_MASK;
+		if (joy_axes[which1][joyaxis_LR] == RIGHT)		val |= SNES_RIGHT_MASK;
 	}
 
 	if (keyssnes[sfc_key[QUIT]] == SDL_PRESSED || joy_buttons[0][sfc_joy[QUIT]]) S9xExit();

@@ -117,6 +117,9 @@ Postprocessing can be enabled by setting "DisplayEffect" in snes9x.cfg. In addit
 
 *CHANGE LOG*
 
+_August 15, 2013:_
+  * Joystick axis are now configurable.
+
 _May 25, 2013:_
   * Graphics backend rewritten to use GLES2 instead of Dispmanx, to enable GPU postprocessing.
   * Graphics smoothing (anti-aliasing) can be disabled.
