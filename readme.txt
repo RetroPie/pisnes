@@ -2,7 +2,7 @@
 
 *INTRODUCTION*
 
-This is a Super Nintento Emulator port based on SNES9X 1.39. This is an old version of SNES9X but was chosen as it runs mostly at full speed on the Raspberry Pi unlike the more recent versions of SNES9X. Game support is therefore not as good as the newer SNES9X versions and graphics & sound is not as accurate.
+This is a SNES Emulator port based on SNES9X 1.39. This is an old version of SNES9X but was chosen as it runs mostly at full speed on the Raspberry Pi unlike the more recent versions of SNES9X. Game support is therefore not as good as the newer SNES9X versions and graphics & sound is not as accurate.
 
 Games that will not work, for example, are Yoshi's Island, Street Fighter Alpha 2, Star Fox.
 
@@ -143,9 +143,3 @@ _May 02, 2013:_
 
 _April 24, 2013:_
   * Initial release.
-
-
-*LICENSE*
-
-Nintendo is a trademark.
-Super NES, SuperScope and Super FX are a trademarks of Nintendo. 
