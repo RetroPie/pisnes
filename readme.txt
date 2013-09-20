@@ -11,6 +11,9 @@ This port supports keyboard and USB joystick input and are configurable. It uses
 Download it from the official Raspberry Pi Store App:
 http://store.raspberrypi.com/projects/pisnes
 
+Or Download the manual install verson here:
+http://pisnes.googlecode.com/git/pisnes.zip
+
 Web page for news, source, additional information:
 http://code.google.com/p/pisnes/
 
