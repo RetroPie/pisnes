@@ -99,7 +99,7 @@ CFLAGS=$(CCFLAGS)
 
 .SUFFIXES: .o .cpp .c .cc .h .m .i .S .asm .obj
 
-LDLIBS = -L/usr/lib/arm-linux-gnueabihf -L/opt/vc/lib -lbcm_host -lGLESv2 -lEGL -lglib-2.0
+LDLIBS = -L/usr/lib/arm-linux-gnueabihf -L/opt/vc/lib -lbcm_host -lGLESv2 -lEGL -lglib-2.0 -lbcm_host -lrt -lasound -lm
 
 all: snes9x snes9x.gui
 
