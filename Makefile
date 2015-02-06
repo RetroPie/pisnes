@@ -69,7 +69,7 @@ INCLUDES=-I/usr/include -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthre
 
 
 #OPTIMISE= -D_ZAURUS -O3 -march=armv6zk -mcpu=arm1176jzf-s -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -ffast-math -fstrict-aliasing -fomit-frame-pointer 
-OPTIMISE= -D_ZAURUS -O3 -march=armv6 -mfpu=vfp -mfloat-abi=hard -ffast-math -fstrict-aliasing -fomit-frame-pointer 
+OPTIMISE = $(CFLAGS) -D_ZAURUS -O3 -ffast-math
 
 CCFLAGS = $(OPTIMISE) \
 -I/usr/include \
@@ -94,8 +94,6 @@ $(GUIDEFINES) \
 
 #-DDEBUGGER
 #-DJOYSTICK_SUPPORT
-
-CFLAGS=$(CCFLAGS)
 
 .SUFFIXES: .o .cpp .c .cc .h .m .i .S .asm .obj
 
