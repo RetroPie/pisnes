@@ -6,13 +6,10 @@ This is a SNES Emulator port based on SNES9X 1.39. This is an old version of SNE
 
 Games that will not work, for example, are Yoshi's Island, Street Fighter Alpha 2, Star Fox.
 
-This port supports keyboard and USB joystick input and are configurable. It uses the bare metal Dispmanx graphics API so can run equally well in the Console or under X-Windows. The audio uses the ALSA API and SDL is used for input.
+This port supports keyboard and USB joystick input and are configurable. It uses GLES2/dispmanx for graphics so can run equally well in the Console or under X-Windows. The audio uses the ALSA API and SDL is used for input.
 
-Download it from the official Raspberry Pi Store App:
-http://store.raspberrypi.com/projects/pisnes
-
-Or Download the manual install verson here:
-http://pisnes.googlecode.com/git/pisnes.zip
+Download the manual install verson here:
+https://drive.google.com/file/d/0B8Z79maZ1obyclFTUlQ4UzAwUWs/view?usp=sharing
 
 Web page for news, source, additional information:
 http://code.google.com/p/pisnes/
