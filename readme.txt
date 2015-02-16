@@ -34,7 +34,7 @@ Keyboard controls:
 F1-F4            Quickload 1-4
 Shift F1-F4      Quicksave 1-4
 
-The joystick layout defaults to Saitek P380 button layout.
+The joystick layout defaults to XBOX 360 controller button layout.
 
 Additionally to quit with the joystick you can press SELECT+START.
 
@@ -102,6 +102,10 @@ PORT CREDITS
   * Based on the Dingoo SDL version of SNES9X v1.39
 
 CHANGE LOG
+
+February 12, 2015:
+  * Joystick controls default to XBOX 360 controller.
+  * More joystick axis support.
 
 August 15, 2013:
   * Joystick axis are now configurable.

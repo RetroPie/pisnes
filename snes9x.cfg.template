@@ -18,18 +18,19 @@ ACCEL=8
 [Joystick]
 # Get codes from "jstest /dev/input/js0"
 # from package "joystick"
-A_1=3
-B_1=2
-X_1=1
-Y_1=0
+# Defaults to XBOX 360 controller
+A_1=1
+B_1=0
+X_1=2
+Y_1=3
 L_1=4
-R_1=6
-START_1=9
-SELECT_1=8
+R_1=5
+START_1=7
+SELECT_1=6
 QUIT=99
-ACCEL=7
+ACCEL=98
 QLOAD=10
-QSAVE=11
+QSAVE=9
 #Joystick axis
 JA_LR=0
 JA_UD=1
