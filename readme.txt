@@ -106,6 +106,7 @@ CHANGE LOG
 February 12, 2015:
   * Joystick controls default to XBOX 360 controller.
   * More joystick axis support.
+  * Initial HAT/DPAD support (seems to have issues on the XBOX 360 controller).
 
 August 15, 2013:
   * Joystick axis are now configurable.
