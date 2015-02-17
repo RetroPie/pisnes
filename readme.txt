@@ -11,7 +11,7 @@ This port supports keyboard and USB joystick input and are configurable. It uses
 Web page for downloads, news, source, additional information:
 https://sourceforge.net/projects/pisnes
 
-(No asking for ROMS, problems with ROMS)
+(No asking for ROMS)
 
 
 CONTROLS
