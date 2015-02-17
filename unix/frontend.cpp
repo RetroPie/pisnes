@@ -289,6 +289,46 @@ static void fe_ProcessEvents (void)
 					joy_axes[joyaxis_UD] = UP;
 			}
 			break;
+        case SDL_JOYHATMOTION:
+              switch(event.jhat.value) {
+              case SDL_HAT_CENTERED:
+                joy_axes[joyaxis_LR] = CENTER;
+                joy_axes[joyaxis_UD] = CENTER;
+                break;
+              case SDL_HAT_UP:
+                joy_axes[joyaxis_LR] = CENTER;
+                joy_axes[joyaxis_UD] = UP;
+                break;
+              case SDL_HAT_DOWN:
+                joy_axes[joyaxis_LR] = CENTER;
+                joy_axes[joyaxis_UD] = DOWN;
+                break;
+              case SDL_HAT_LEFT:
+                joy_axes[joyaxis_LR] = LEFT;
+                joy_axes[joyaxis_UD] = CENTER;
+                break;
+              case SDL_HAT_RIGHT:
+                joy_axes[joyaxis_LR] = RIGHT;
+                joy_axes[joyaxis_UD] = CENTER;
+                break;
+              case SDL_HAT_RIGHTUP:
+                joy_axes[joyaxis_LR] = RIGHT;
+                joy_axes[joyaxis_UD] = UP;
+                break;
+              case SDL_HAT_LEFTUP:
+                joy_axes[joyaxis_LR] = LEFT;
+                joy_axes[joyaxis_UD] = UP;
+                break;
+              case SDL_HAT_RIGHTDOWN:
+                joy_axes[joyaxis_LR] = RIGHT;
+                joy_axes[joyaxis_UD] = DOWN;
+                break;
+              case SDL_HAT_LEFTDOWN:
+                joy_axes[joyaxis_LR] = LEFT;
+                joy_axes[joyaxis_UD] = DOWN;
+                break;
+              }
+
 		case SDL_KEYDOWN:
 			keyssnes = SDL_GetKeyState(NULL);
 			break;

@@ -863,17 +863,51 @@ void S9xProcessEvents (bool8_32 block)
 					joy_axes[event.jbutton.which][joyaxis_UD] = UP;
 			}
             break;
+        case SDL_JOYHATMOTION:
+              switch(event.jhat.value) {
+              case SDL_HAT_CENTERED:
+                joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
+                joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
+                break;
+              case SDL_HAT_UP:
+                joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
+                joy_axes[event.jbutton.which][joyaxis_UD] = UP;
+                break;
+              case SDL_HAT_DOWN:
+                joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
+                joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
+                break;
+              case SDL_HAT_LEFT:
+                joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
+                joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
+                break;
+              case SDL_HAT_RIGHT:
+                joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
+                joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
+                break;
+              case SDL_HAT_RIGHTUP:
+                joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
+                joy_axes[event.jbutton.which][joyaxis_UD] = UP;
+                break;
+              case SDL_HAT_LEFTUP:
+                joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
+                joy_axes[event.jbutton.which][joyaxis_UD] = UP;
+                break;
+              case SDL_HAT_RIGHTDOWN:
+                joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
+                joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
+                break;
+              case SDL_HAT_LEFTDOWN:
+                joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
+                joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
+                break;
+              }
+
 		case SDL_KEYDOWN:
 			keyssnes = SDL_GetKeyState(NULL);
 
 	 		if (event.key.keysym.sym == SDLK_0)
 				Settings.DisplayFrameRate = !Settings.DisplayFrameRate;
-
-/*		    else if (event.key.keysym.sym == SDLK_1)	PPU.BG_Forced ^= 1;
-		    else if (event.key.keysym.sym == SDLK_2)	PPU.BG_Forced ^= 2;
-		    else if (event.key.keysym.sym == SDLK_3)	PPU.BG_Forced ^= 4;
-		    else if (event.key.keysym.sym == SDLK_4)	PPU.BG_Forced ^= 8;
-		    else if (event.key.keysym.sym == SDLK_5)	PPU.BG_Forced ^= 16; */
 
 			else if (event.key.keysym.sym == SDLK_F1)	num = 1;
 			else if (event.key.keysym.sym == SDLK_F2)	num = 2;
