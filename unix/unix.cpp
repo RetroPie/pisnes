@@ -481,6 +481,15 @@ void S9xInitInputDevices ()
 	sfc_joy[START_1] = get_integer_conf("Joystick", "START_1", RPI_JOY_START);
 	sfc_joy[SELECT_1] = get_integer_conf("Joystick", "SELECT_1", RPI_JOY_SELECT);
 
+    sfc_joy[A_2] = get_integer_conf("Joystick", "A_2", RPI_JOY_A);
+    sfc_joy[B_2] = get_integer_conf("Joystick", "B_2", RPI_JOY_B);
+    sfc_joy[X_2] = get_integer_conf("Joystick", "X_2", RPI_JOY_X);
+    sfc_joy[Y_2] = get_integer_conf("Joystick", "Y_2", RPI_JOY_Y);
+    sfc_joy[L_2] = get_integer_conf("Joystick", "L_2", RPI_JOY_L);
+    sfc_joy[R_2] = get_integer_conf("Joystick", "R_2", RPI_JOY_R);
+    sfc_joy[START_2] = get_integer_conf("Joystick", "START_2", RPI_JOY_START);
+    sfc_joy[SELECT_2] = get_integer_conf("Joystick", "SELECT_2", RPI_JOY_SELECT);
+
 	sfc_joy[QUIT] = get_integer_conf("Joystick", "QUIT", RPI_JOY_QUIT);
 	sfc_joy[ACCEL] = get_integer_conf("Joystick", "ACCEL", RPI_JOY_ACCEL);
 
@@ -864,44 +873,73 @@ void S9xProcessEvents (bool8_32 block)
 			}
             break;
         case SDL_JOYHATMOTION:
-              switch(event.jhat.value) {
-              case SDL_HAT_CENTERED:
+			if ( event.jhat.value & SDL_HAT_CENTERED )
+    		{
                 joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
                 joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
-                break;
-              case SDL_HAT_UP:
+    		}
+			if ( event.jhat.value & SDL_HAT_UP )
+    		{
                 joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
                 joy_axes[event.jbutton.which][joyaxis_UD] = UP;
-                break;
-              case SDL_HAT_DOWN:
+    		}
+			if ( event.jhat.value & SDL_HAT_DOWN )
+    		{
                 joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
                 joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
-                break;
-              case SDL_HAT_LEFT:
+    		}
+			if ( event.jhat.value & SDL_HAT_LEFT )
+    		{
                 joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
                 joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
-                break;
-              case SDL_HAT_RIGHT:
+			}
+			if ( event.jhat.value & SDL_HAT_RIGHT )
+    		{
                 joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
                 joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
-                break;
-              case SDL_HAT_RIGHTUP:
-                joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
-                joy_axes[event.jbutton.which][joyaxis_UD] = UP;
-                break;
-              case SDL_HAT_LEFTUP:
-                joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
-                joy_axes[event.jbutton.which][joyaxis_UD] = UP;
-                break;
-              case SDL_HAT_RIGHTDOWN:
-                joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
-                joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
-                break;
-              case SDL_HAT_LEFTDOWN:
-                joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
-                joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
-                break;
-              }
+			}
+			break;
+
+
+
+//              switch(event.jhat.value) {
+//              case SDL_HAT_CENTERED:
+//                joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
+//                joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
+//                break;
+//              case SDL_HAT_UP:
+//                joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
+//                joy_axes[event.jbutton.which][joyaxis_UD] = UP;
+//                break;
+//              case SDL_HAT_DOWN:
+//                joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
+//                joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
+//                break;
+//              case SDL_HAT_LEFT:
+//                joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
+//                joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
+//                break;
+//              case SDL_HAT_RIGHT:
+//                joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
+//                joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
+//                break;
+//              case SDL_HAT_RIGHTUP:
+//                joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
+//                joy_axes[event.jbutton.which][joyaxis_UD] = UP;
+//                break;
+//              case SDL_HAT_LEFTUP:
+//                joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
+//                joy_axes[event.jbutton.which][joyaxis_UD] = UP;
+//                break;
+//              case SDL_HAT_RIGHTDOWN:
+//                joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
+//                joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
+//                break;
+//              case SDL_HAT_LEFTDOWN:
+//                joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
+//                joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
+//                break;
+//              }
 
 		case SDL_KEYDOWN:
 			keyssnes = SDL_GetKeyState(NULL);
@@ -1140,6 +1178,7 @@ uint32 S9xReadJoypad (int which1)
 	if(which1 > 1) return val;
 
 	if(which1 == 0) {
+		// Handle keyboard and first joystick as the same player/controls
 		if (keyssnes[sfc_key[L_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[L_1]])		val |= SNES_TL_MASK;
 		if (keyssnes[sfc_key[R_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[R_1]])		val |= SNES_TR_MASK;
 		if (keyssnes[sfc_key[X_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[X_1]])		val |= SNES_X_MASK;
@@ -1152,15 +1191,17 @@ uint32 S9xReadJoypad (int which1)
 		if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_UD] == DOWN)	val |= SNES_DOWN_MASK;
 		if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_LR] == LEFT)	val |= SNES_LEFT_MASK;
 		if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_LR] == RIGHT)	val |= SNES_RIGHT_MASK;
-	} else {
-		if (joy_buttons[which1][sfc_joy[L_1]])		val |= SNES_TL_MASK;
-		if (joy_buttons[which1][sfc_joy[R_1]])		val |= SNES_TR_MASK;
-		if (joy_buttons[which1][sfc_joy[X_1]])		val |= SNES_X_MASK;
-		if (joy_buttons[which1][sfc_joy[Y_1]])		val |= SNES_Y_MASK;
-		if (joy_buttons[which1][sfc_joy[B_1]])		val |= SNES_B_MASK;
-		if (joy_buttons[which1][sfc_joy[A_1]])		val |= SNES_A_MASK;
-		if (joy_buttons[which1][sfc_joy[START_1]])	val |= SNES_START_MASK;
-		if (joy_buttons[which1][sfc_joy[SELECT_1]])	val |= SNES_SELECT_MASK;
+	}
+	if(which1 == 1) {  
+		//Handle second joystick
+		if (joy_buttons[which1][sfc_joy[L_2]])		val |= SNES_TL_MASK;
+		if (joy_buttons[which1][sfc_joy[R_2]])		val |= SNES_TR_MASK;
+		if (joy_buttons[which1][sfc_joy[X_2]])		val |= SNES_X_MASK;
+		if (joy_buttons[which1][sfc_joy[Y_2]])		val |= SNES_Y_MASK;
+		if (joy_buttons[which1][sfc_joy[B_2]])		val |= SNES_B_MASK;
+		if (joy_buttons[which1][sfc_joy[A_2]])		val |= SNES_A_MASK;
+		if (joy_buttons[which1][sfc_joy[START_2]])	val |= SNES_START_MASK;
+		if (joy_buttons[which1][sfc_joy[SELECT_2]])	val |= SNES_SELECT_MASK;
 		if (joy_axes[which1][joyaxis_UD] == UP)			val |= SNES_UP_MASK;
 		if (joy_axes[which1][joyaxis_UD] == DOWN)		val |= SNES_DOWN_MASK;
 		if (joy_axes[which1][joyaxis_LR] == LEFT)		val |= SNES_LEFT_MASK;
