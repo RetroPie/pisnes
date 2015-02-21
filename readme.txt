@@ -113,6 +113,10 @@ PORT CREDITS
 CHANGE LOG
 ----------
 
+February 21, 2015:
+
+  * Added 2 player support.
+
 February 12, 2015:
 
   * Joystick controls default to XBOX 360 controller.
