@@ -94,10 +94,12 @@ Composite output, try removing/commenting out the "overscan_" parameters from "/
     #overscan_top=16
     #overscan_bottom=16
 
-GRAPHICS EFFECTS
-----------------
+GRAPHICS AND SOUND EFFECTS
+--------------------------
 
 Postprocessing can be enabled by setting "DisplayEffect" in snes9x.cfg. In addition you can disable anti-aliasing smoothing ("DisplaySmoothStretch" in snes9x.cfg). The postprocessing "phospher" effect does not run at full speed - i.e. it taxes the Pi GPU a little too much.
+
+To improve the sound on the RPi 2 you can set "InterpolatedSound=1". This setting on the RPi 1 slows it down too much.
 
 ORIGINAL CREDITS
 ----------------
