@@ -21,8 +21,8 @@ ACCEL=8
 # Defaults to XBOX 360 controller
 A_1=1
 B_1=0
-X_1=2
-Y_1=3
+X_1=3
+Y_1=2
 L_1=4
 R_1=5
 START_1=7
@@ -37,8 +37,8 @@ JA_UD=1
 #player 2 button configuration
 A_2=1
 B_2=0
-X_2=2
-Y_2=3
+X_2=3
+Y_2=2
 L_2=4
 R_2=5
 START_2=7
