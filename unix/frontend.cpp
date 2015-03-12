@@ -308,10 +308,10 @@ static uint32 fe_ReadJoypad (int which1)
 	if (keyssnes[sfc_key[B_1]] == SDL_PRESSED || joy_buttons[sfc_joy[B_1]])		val |= SNES_B_MASK;
 	if (keyssnes[sfc_key[START_1]] == SDL_PRESSED || joy_buttons[sfc_joy[START_1]])	val |= SNES_START_MASK;
 	if (keyssnes[sfc_key[SELECT_1]] == SDL_PRESSED || joy_buttons[sfc_joy[SELECT_1]])	val |= SNES_SELECT_MASK;
-	if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_axes[joyaxis_UD] == UP)		val |= SNES_UP_MASK;
-	if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[joyaxis_UD] == DOWN)	val |= SNES_DOWN_MASK;
-	if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[joyaxis_LR] == LEFT)	val |= SNES_LEFT_MASK;
-	if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[joyaxis_LR] == RIGHT)	val |= SNES_RIGHT_MASK;
+	if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_buttons[sfc_joy[UP_1]] || joy_axes[joyaxis_UD] == UP)		val |= SNES_UP_MASK;
+	if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_buttons[sfc_joy[DOWN_1]] || joy_axes[joyaxis_UD] == DOWN)	val |= SNES_DOWN_MASK;
+	if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_buttons[sfc_joy[LEFT_1]] || joy_axes[joyaxis_LR] == LEFT)	val |= SNES_LEFT_MASK;
+	if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_buttons[sfc_joy[RIGHT_1]] || joy_axes[joyaxis_LR] == RIGHT)	val |= SNES_RIGHT_MASK;
 
 	if (keyssnes[sfc_key[QUIT]] == SDL_PRESSED || joy_buttons[sfc_joy[QUIT]]) fe_exit();
 
