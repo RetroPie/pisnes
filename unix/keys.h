@@ -21,6 +21,10 @@
 #define RPI_JOY_Y	0
 #define RPI_JOY_L	4
 #define RPI_JOY_R	6
+#define RPI_JOY_LEFT	12
+#define RPI_JOY_RIGHT	13
+#define RPI_JOY_UP	14
+#define RPI_JOY_DOWN	15
 #define RPI_JOY_START	9
 #define RPI_JOY_SELECT	8
 #define RPI_JOY_QUIT	5
