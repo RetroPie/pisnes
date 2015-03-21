@@ -115,17 +115,18 @@ PORT CREDITS
 CHANGE LOG
 ----------
 
-February 21, 2015:
+March 2015:
+
+  * DPAD/HAT handling fixed.
+
+February 2015:
 
   * Added 2 player support.
-
-February 12, 2015:
-
   * Joystick controls default to XBOX 360 controller.
   * More joystick axis support.
   * Initial HAT/DPAD support (seems to have issues on the XBOX 360 controller).
 
-August 15, 2013:
+August 2013:
 
   * Joystick axis are now configurable.
 
