@@ -17,23 +17,23 @@ https://sourceforge.net/projects/pisnes
 
 CONTROLS
 --------
-
-* 'up arrow'       Up direction
-* 'down arrow'     Down direction
-* 'left arrow'     Left direction
-* 'right arrow'    Right direction
-* 's'              X button
-* 'x'              Y button
-* 'd'              A button
-* 'c'              B button
-* 'a'              TL button
-* 'f'              TR button
-* 'return'         Start button
-* 'tab'            Select button
-* 'backspace'      Turbo
-* 'escape'         Quit
-* F1-F4            Quickload 1-4
-* Shift F1-F4      Quicksave 1-4
+                   KEYBOARD     XBOX360 CONTROLS
+* Up direction     up arrow     
+* Down direction   down arrow
+* Left direction   left arrow
+* Right direction  right arrow
+* X button         s            Y
+* Y button         x            X
+* A button         d            B
+* B button         c            A
+* TL button        a            TL
+* TR button        f            TR
+* Start button     return       START
+* Select button    tab          BACK
+* Turbo            backspace
+* Quit             escape       BACK+START
+* Quickload 1-4    F1-F4        RIGHT THUMB
+* Quicksave 1-4    Shift F1-F4  LEFT THUMB
 
 The joystick layout defaults to XBOX 360 controller button layout.
 
@@ -115,6 +115,10 @@ PORT CREDITS
 CHANGE LOG
 ----------
 
+September 2015:
+
+  * DPAD configurable as buttons (resolves new xpad driver causing HAT issues)
+   
 February 21, 2015:
 
   * Added 2 player support.

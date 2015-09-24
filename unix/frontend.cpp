@@ -251,10 +251,15 @@ static void fe_exit(void)
 	exit(0);
 }
 
+SDL_Joystick *joy[2];
+
 uint8 joy_buttons[32];
-uint8 joy_axes[8];
+uint8 joy_axes[2][8];
 
 int joyaxis_LR, joyaxis_UD;
+
+#define JOYLR 0
+#define JOYUD 1
 
 #define NUMKEYS 256
 static Uint16 sfc_key[NUMKEYS];
@@ -262,6 +267,53 @@ static Uint16 sfc_joy[NUMKEYS];
 
 static void fe_ProcessEvents (void)
 {
+
+	int i, hatmovement=0;
+
+	//Process one joystick
+	for(i=0;i<1;i++) {
+		joy_axes[i][JOYLR] = CENTER;
+		joy_axes[i][JOYUD] = CENTER;
+
+		if(SDL_JoystickNumHats(joy[i]) > 0) {
+        	Uint8 hat = SDL_JoystickGetHat(joy[i], 0);
+			if (hat != 0) {
+				hatmovement=1;
+        		if(hat & SDL_HAT_UP) { joy_axes[i][JOYUD] = UP; }
+        		if(hat & SDL_HAT_DOWN) { joy_axes[i][JOYUD] = DOWN; }
+        		if(hat & SDL_HAT_LEFT) { joy_axes[i][JOYLR] = LEFT; }
+        		if(hat & SDL_HAT_RIGHT) { joy_axes[i][JOYLR] = RIGHT; }
+			}
+		}
+
+	    int axis = SDL_JoystickNumAxes(joy[i]);
+
+		//HAT movement overrides analogue as analogue always shows a value
+	    if(axis > 0 && !hatmovement) {
+			Sint16 x_move = SDL_JoystickGetAxis(joy[i], joyaxis_LR);
+			Sint16 y_move = SDL_JoystickGetAxis(joy[i], joyaxis_UD);
+	
+			if(x_move != 0) {
+				if(x_move > -10000 && x_move < 10000)
+					joy_axes[i][JOYLR] = CENTER;
+				else if(x_move > 10000)
+					joy_axes[i][JOYLR] = RIGHT;
+				else
+					joy_axes[i][JOYLR] = LEFT;
+			}
+	
+			if(y_move != 0) {
+				if(y_move > -10000 && y_move < 10000)
+					joy_axes[i][JOYUD] = CENTER;
+				else if(y_move > 10000)
+					joy_axes[i][JOYUD] = DOWN;
+				else
+					joy_axes[i][JOYUD] = UP;
+			}
+		}
+
+    }
+
 	SDL_Event event;
 	while(SDL_PollEvent(&event)) {
 		switch(event.type) {
@@ -271,64 +323,6 @@ static void fe_ProcessEvents (void)
 		case SDL_JOYBUTTONUP:
 			joy_buttons[event.jbutton.button] = 0;
 			break;
-		case SDL_JOYAXISMOTION:
-			if(event.jaxis.axis == joyaxis_LR) {
-				if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
-					joy_axes[joyaxis_LR] = CENTER;
-				else if(event.jaxis.value > 10000)
-					joy_axes[joyaxis_LR] = RIGHT;
-				else
-					joy_axes[joyaxis_LR] = LEFT;
-			}
-			if(event.jaxis.axis == joyaxis_UD) {
-				if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
-					joy_axes[joyaxis_UD] = CENTER;
-				else if(event.jaxis.value > 10000)
-					joy_axes[joyaxis_UD] = DOWN;
-				else
-					joy_axes[joyaxis_UD] = UP;
-			}
-			break;
-        case SDL_JOYHATMOTION:
-              switch(event.jhat.value) {
-              case SDL_HAT_CENTERED:
-                joy_axes[joyaxis_LR] = CENTER;
-                joy_axes[joyaxis_UD] = CENTER;
-                break;
-              case SDL_HAT_UP:
-                joy_axes[joyaxis_LR] = CENTER;
-                joy_axes[joyaxis_UD] = UP;
-                break;
-              case SDL_HAT_DOWN:
-                joy_axes[joyaxis_LR] = CENTER;
-                joy_axes[joyaxis_UD] = DOWN;
-                break;
-              case SDL_HAT_LEFT:
-                joy_axes[joyaxis_LR] = LEFT;
-                joy_axes[joyaxis_UD] = CENTER;
-                break;
-              case SDL_HAT_RIGHT:
-                joy_axes[joyaxis_LR] = RIGHT;
-                joy_axes[joyaxis_UD] = CENTER;
-                break;
-              case SDL_HAT_RIGHTUP:
-                joy_axes[joyaxis_LR] = RIGHT;
-                joy_axes[joyaxis_UD] = UP;
-                break;
-              case SDL_HAT_LEFTUP:
-                joy_axes[joyaxis_LR] = LEFT;
-                joy_axes[joyaxis_UD] = UP;
-                break;
-              case SDL_HAT_RIGHTDOWN:
-                joy_axes[joyaxis_LR] = RIGHT;
-                joy_axes[joyaxis_UD] = DOWN;
-                break;
-              case SDL_HAT_LEFTDOWN:
-                joy_axes[joyaxis_LR] = LEFT;
-                joy_axes[joyaxis_UD] = DOWN;
-                break;
-              }
-
 		case SDL_KEYDOWN:
 			keyssnes = SDL_GetKeyState(NULL);
 			break;
@@ -348,10 +342,16 @@ static uint32 fe_ReadJoypad (int which1)
 	if (keyssnes[sfc_key[B_1]] == SDL_PRESSED || joy_buttons[sfc_joy[B_1]])		val |= SNES_B_MASK;
 	if (keyssnes[sfc_key[START_1]] == SDL_PRESSED || joy_buttons[sfc_joy[START_1]])	val |= SNES_START_MASK;
 	if (keyssnes[sfc_key[SELECT_1]] == SDL_PRESSED || joy_buttons[sfc_joy[SELECT_1]])	val |= SNES_SELECT_MASK;
-	if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_axes[joyaxis_UD] == UP)		val |= SNES_UP_MASK;
-	if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[joyaxis_UD] == DOWN)	val |= SNES_DOWN_MASK;
-	if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[joyaxis_LR] == LEFT)	val |= SNES_LEFT_MASK;
-	if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[joyaxis_LR] == RIGHT)	val |= SNES_RIGHT_MASK;
+	if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_axes[0][JOYUD] == UP)		val |= SNES_UP_MASK;
+	if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[0][JOYUD] == DOWN)	val |= SNES_DOWN_MASK;
+	if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[0][JOYLR] == LEFT)	val |= SNES_LEFT_MASK;
+	if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[0][JOYLR] == RIGHT)	val |= SNES_RIGHT_MASK;
+
+	// DPAD special buttons
+    if (joy_buttons[sfc_joy[LEFT_1]])   val |= SNES_LEFT_MASK;
+    if (joy_buttons[sfc_joy[RIGHT_1]])  val |= SNES_RIGHT_MASK;
+    if (joy_buttons[sfc_joy[UP_1]]) val |= SNES_UP_MASK;
+    if (joy_buttons[sfc_joy[DOWN_1]])   val |= SNES_DOWN_MASK;
 
 	if (keyssnes[sfc_key[QUIT]] == SDL_PRESSED || joy_buttons[sfc_joy[QUIT]]) fe_exit();
 
@@ -399,7 +399,7 @@ static int get_keyjoy_conf (char *section, char *option, int defval)
 static void fe_S9xInitInputDevices ()
 {
 	memset(joy_buttons, 0, 32);
-	memset(joy_axes, 0, 8);
+	memset(joy_axes, 0, 8*2);
 	memset(sfc_key, 0, NUMKEYS*2);
 	memset(sfc_joy, 0, NUMKEYS*2);
 
@@ -439,6 +439,10 @@ static void fe_S9xInitInputDevices ()
 	sfc_joy[Y_1] = get_keyjoy_conf("Joystick", "Y_1", RPI_JOY_Y);
 	sfc_joy[L_1] = get_keyjoy_conf("Joystick", "L_1", RPI_JOY_L);
 	sfc_joy[R_1] = get_keyjoy_conf("Joystick", "R_1", RPI_JOY_R);
+    sfc_joy[LEFT_1] = get_keyjoy_conf("Joystick", "LEFT_1", RPI_JOY_LEFT);
+    sfc_joy[RIGHT_1] = get_keyjoy_conf("Joystick", "RIGHT_1", RPI_JOY_RIGHT);
+    sfc_joy[UP_1] = get_keyjoy_conf("Joystick", "UP_1", RPI_JOY_UP);
+    sfc_joy[DOWN_1] = get_keyjoy_conf("Joystick", "DOWN_1", RPI_JOY_DOWN);
 	sfc_joy[START_1] = get_keyjoy_conf("Joystick", "START_1", RPI_JOY_START);
 	sfc_joy[SELECT_1] = get_keyjoy_conf("Joystick", "SELECT_1", RPI_JOY_SELECT);
 
@@ -631,7 +635,6 @@ DISPMANX_UPDATE_HANDLE_T fe_update;
 
 static void initSDL(void)
 {
-	SDL_Joystick* joy;
 
 	//SDL initialisation
     if (SDL_Init(SDL_INIT_JOYSTICK) < 0 )
@@ -649,9 +652,9 @@ static void initSDL(void)
     SDL_EventState(SDL_USEREVENT,SDL_IGNORE);
     SDL_ShowCursor(SDL_DISABLE);
 
-    joy = SDL_JoystickOpen(0);
+    joy[0] = SDL_JoystickOpen(0);
 
-    if(joy) {
+    if(joy[0]) {
 //sq        printf("Opened joystick 0.\n");
         if(SDL_JoystickEventState(SDL_ENABLE) != SDL_ENABLE) {
             printf("Could not set joystick event state\n", SDL_GetError());

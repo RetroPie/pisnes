@@ -34,6 +34,11 @@ QSAVE=9
 #Joystick axis
 JA_LR=0
 JA_UD=1
+#Joystick DPAD buttons
+LEFT_1=11
+RIGHT_1=12
+UP_1=13
+DOWN_1=14
 #player 2 button configuration
 A_2=1
 B_2=0
@@ -46,6 +51,11 @@ SELECT_2=6
 #Joystick axis
 JA_LR_2=0
 JA_UD_2=1
+#Joystick DPAD buttons
+LEFT_2=11
+RIGHT_2=12
+UP_2=13
+DOWN_2=14
 
 
 [Graphics]
@@ -65,4 +75,5 @@ APUEnabled=1
 # Sound rates below as index, i.e. 7=44100 (some of these produce static)
 # 0, 8192, 11025, 16000, 22050, 29300, 32000, 44100
 SoundPlaybackRate=7
-InterpolatedSound=0
+# Enable on RPI2 for clearer sound, disable on RPI1 due to performance impact
+InterpolatedSound=1
