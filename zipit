@@ -1,3 +1,4 @@
 rm pisnes.zip
+cp -p snes9x.cfg snes9x.cfg.backup 
 cp snes9x.cfg.template snes9x.cfg
-zip pisnes.zip snes9x snes9x.gui snes9x.cfg readme.txt readme_snes9x.txt skins/rpimenu16.bmp roms/dir.txt 
+zip pisnes.zip snes9x snes9x.gui snes9x.cfg readme.txt readme_snes9x.txt skins/rpimenu16.bmp roms/dir.txt preview/dir.txt
