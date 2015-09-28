@@ -49,6 +49,7 @@ INSTALLATION
     snes9x      -> Game binary
     snes9x.gui  -> Frontend binary
     snes9x.cfg  -> MAME configuration file, limited support to only the options in the supplied file (not the full MAME settings).
+    preview/    -> Box art in jpg format, must be 640x480 or smaller, matching name of ROM file.
     roms/       -> ROMs directory (Put your game ROMs in here)
     skins/      -> Frontend skins directory
     $HOME/.snes96_snapshots/ -> SRM and snapshot saves are stored here
@@ -117,6 +118,7 @@ CHANGE LOG
 
 September 2015:
 
+  * Added boxart preview window.
   * DPAD configurable as buttons (resolves new xpad driver causing HAT issues)
    
 February 21, 2015:
