@@ -9,13 +9,8 @@
 //#include "allegro.h"
 #include <glib.h>
 #include <bcm_host.h>
-
-//sqtest
 #include <jpeglib.h>
 #include <jerror.h>
-
-//sqtest
-#include <time.h>
 
 #include "keyconstants.h"
 #include "keys.h"
@@ -319,7 +314,6 @@ static void game_list_view(int *pos) {
 				if (aux_pos==*pos) {
 					fe_gamelist_text_out( screen_x, screen_y, fe_drivers[i].name, color16(0,150,255));
 					fe_gamelist_text_out( screen_x-5, screen_y,">",color16(255,255,255) );
-		//sq			fe_gamelist_text_out( screen_x-7, screen_y-1,"-",color16(255,255,255) );
 				}
 				else {
 					fe_gamelist_text_out( screen_x, screen_y, fe_drivers[i].name, color16(255,255,255));
@@ -575,7 +569,7 @@ static void select_game(char *game)
 	strcpy(game,"builtinn");
 
 	/* Clean screen */
-	frontend_display(0);
+	frontend_display(-1);
 
 	/* Wait until user selects a game */
 	while(1)
@@ -682,7 +676,7 @@ int main (int argc, char **argv)
 			/* Draw background image */
 	    	show_bmp_16bpp(fe_screen, fe_menu_bmp);
 			fe_gamelist_text_out(35, 110, "ERROR: NO AVAILABLE GAMES FOUND",color16(255,255,255));
-			frontend_display(0);
+			frontend_display(-1);
 			sleep(5);
 			fe_exit();
 		}
@@ -776,11 +770,11 @@ static void preview_init(int x, int y)
     //Width would always be 640 and stretched to match the display, height
     //would change according to the picture ratio
 
-    tx = (float) 400 / (float) 640 * (float) display_width;
-    ty = (float) 186 / (float) 480 * (float) display_height;
+    tx = (float) 392 / (float) 640 * (float) display_width;
+    ty = (float) 174 / (float) 480 * (float) display_height;
 
 //640x473
-    twidth = (float) 210 / (float) 640 * (float) display_width;
+    twidth = (float) 234 / (float) 640 * (float) display_width;
     theight = (float) twidth / (float) ((float) x / (float) y);
 
     // Preview display
@@ -835,7 +829,6 @@ static void frontend_init(void)
     uint32_t crap;
     fe_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 640, 480, &crap);
 
-
     vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height);
     vc_dispmanx_rect_set( &src_rect, 0, 0, 640 << 16, 480 << 16);
 
@@ -847,16 +840,7 @@ static void frontend_init(void)
            fe_display, 1, &dst_rect, fe_resource, &src_rect,
            DISPMANX_PROTECTION_NONE, 0, 0, (DISPMANX_TRANSFORM_T) 0 );
 
-//sq    // Preview display
-//sq    preview_init(640,480);
-//sq    vc_dispmanx_rect_set( &dst_rect, 400, 186, 200, 180);
-//sq    vc_dispmanx_rect_set( &src_rect, 0, 0, 640 << 16, 480 << 16);
-//sq    preview_element = vc_dispmanx_element_add( fe_update,
-//sq           fe_display, 2, &dst_rect, preview_resource, &src_rect,
-//sq           DISPMANX_PROTECTION_NONE, 0, 0, (DISPMANX_TRANSFORM_T) 0 );
-
     ret = vc_dispmanx_update_submit_sync( fe_update );
-
 }
 
 static void frontend_deinit(void)
@@ -891,11 +875,13 @@ static void frontend_display(int gameid)
     vc_dispmanx_resource_write_data( fe_resource, VC_IMAGE_RGB565, 640*2, fe_screen, &dst_rect );
 
     // Load and display game preview image if one exists
-	strcpy(filestr,"preview/");
-    strncat(filestr, fe_drivers[gameid].name, strlen(fe_drivers[gameid].name)-4);
-    strcat(filestr, ".jpg");
+    if(gameid >= 0) {
+        strcpy(filestr,"preview/");
+        strncat(filestr, fe_drivers[gameid].name, strlen(fe_drivers[gameid].name)-4);
+        strcat(filestr, ".jpg");
 
-    LoadJPEG(filestr);
+        LoadJPEG(filestr);
+    }
 
     vc_dispmanx_update_submit_sync( fe_update );
 
