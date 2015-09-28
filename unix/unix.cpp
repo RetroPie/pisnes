@@ -440,53 +440,53 @@ static Uint16 sfc_joy[NUMKEYS];
 
 void S9xInitInputDevices ()
 {
-	memset(joy_buttons, 0, 32*2);
-	memset(joy_axes, 0, 8*2);
-	memset(sfc_key, 0, NUMKEYS*2);
-	memset(sfc_joy, 0, NUMKEYS*2);
+    memset(joy_buttons, 0, 32*2);
+    memset(joy_axes, 0, 8*2);
+    memset(sfc_key, 0, NUMKEYS*2);
+    memset(sfc_joy, 0, NUMKEYS*2);
 
-	//Open config file for reading below
-	open_config_file();
+    //Open config file for reading below
+    open_config_file();
 
-	//Configure keys from config file or defaults
-	sfc_key[A_1] = get_integer_conf("Keyboard", "A_1", RPI_KEY_A);
-	sfc_key[B_1] = get_integer_conf("Keyboard", "B_1", RPI_KEY_B);
-	sfc_key[X_1] = get_integer_conf("Keyboard", "X_1", RPI_KEY_X);
-	sfc_key[Y_1] = get_integer_conf("Keyboard", "Y_1", RPI_KEY_Y);
-	sfc_key[L_1] = get_integer_conf("Keyboard", "L_1", RPI_KEY_L);
-	sfc_key[R_1] = get_integer_conf("Keyboard", "R_1", RPI_KEY_R);
-	sfc_key[START_1] = get_integer_conf("Keyboard", "START_1", RPI_KEY_START);
-	sfc_key[SELECT_1] = get_integer_conf("Keyboard", "SELECT_1", RPI_KEY_SELECT);
-	sfc_key[LEFT_1] = get_integer_conf("Keyboard", "LEFT_1", RPI_KEY_LEFT);
-	sfc_key[RIGHT_1] = get_integer_conf("Keyboard", "RIGHT_1", RPI_KEY_RIGHT);
-	sfc_key[UP_1] = get_integer_conf("Keyboard", "UP_1", RPI_KEY_UP);
-	sfc_key[DOWN_1] = get_integer_conf("Keyboard", "DOWN_1", RPI_KEY_DOWN);
+    //Configure keys from config file or defaults
+    sfc_key[A_1] = get_integer_conf("Keyboard", "A_1", RPI_KEY_A);
+    sfc_key[B_1] = get_integer_conf("Keyboard", "B_1", RPI_KEY_B);
+    sfc_key[X_1] = get_integer_conf("Keyboard", "X_1", RPI_KEY_X);
+    sfc_key[Y_1] = get_integer_conf("Keyboard", "Y_1", RPI_KEY_Y);
+    sfc_key[L_1] = get_integer_conf("Keyboard", "L_1", RPI_KEY_L);
+    sfc_key[R_1] = get_integer_conf("Keyboard", "R_1", RPI_KEY_R);
+    sfc_key[START_1] = get_integer_conf("Keyboard", "START_1", RPI_KEY_START);
+    sfc_key[SELECT_1] = get_integer_conf("Keyboard", "SELECT_1", RPI_KEY_SELECT);
+    sfc_key[LEFT_1] = get_integer_conf("Keyboard", "LEFT_1", RPI_KEY_LEFT);
+    sfc_key[RIGHT_1] = get_integer_conf("Keyboard", "RIGHT_1", RPI_KEY_RIGHT);
+    sfc_key[UP_1] = get_integer_conf("Keyboard", "UP_1", RPI_KEY_UP);
+    sfc_key[DOWN_1] = get_integer_conf("Keyboard", "DOWN_1", RPI_KEY_DOWN);
 
-	sfc_key[QUIT] = get_integer_conf("Keyboard", "QUIT", RPI_KEY_QUIT);
-	sfc_key[ACCEL] = get_integer_conf("Keyboard", "ACCEL", RPI_KEY_ACCEL);
+    sfc_key[QUIT] = get_integer_conf("Keyboard", "QUIT", RPI_KEY_QUIT);
+    sfc_key[ACCEL] = get_integer_conf("Keyboard", "ACCEL", RPI_KEY_ACCEL);
 
 /*	sfc_key[LEFT_2] = SDLK_4;
-	sfc_key[RIGHT_2] = SDLK_6;
-	sfc_key[UP_2] = SDLK_8;
-	sfc_key[DOWN_2] = SDLK_2;
-	sfc_key[LU_2] = SDLK_7;
-	sfc_key[LD_2] = SDLK_1;
-	sfc_key[RU_2] = SDLK_9;
-	sfc_key[RD_2] = SDLK_3; */
+    sfc_key[RIGHT_2] = SDLK_6;
+    sfc_key[UP_2] = SDLK_8;
+    sfc_key[DOWN_2] = SDLK_2;
+    sfc_key[LU_2] = SDLK_7;
+    sfc_key[LD_2] = SDLK_1;
+    sfc_key[RU_2] = SDLK_9;
+    sfc_key[RD_2] = SDLK_3; */
 
-	//Configure joysticks from config file or defaults
-	sfc_joy[A_1] = get_integer_conf("Joystick", "A_1", RPI_JOY_A);
-	sfc_joy[B_1] = get_integer_conf("Joystick", "B_1", RPI_JOY_B);
-	sfc_joy[X_1] = get_integer_conf("Joystick", "X_1", RPI_JOY_X);
-	sfc_joy[Y_1] = get_integer_conf("Joystick", "Y_1", RPI_JOY_Y);
-	sfc_joy[L_1] = get_integer_conf("Joystick", "L_1", RPI_JOY_L);
-	sfc_joy[R_1] = get_integer_conf("Joystick", "R_1", RPI_JOY_R);
-	sfc_joy[LEFT_1] = get_integer_conf("Joystick", "LEFT_1", RPI_JOY_LEFT);
-	sfc_joy[RIGHT_1] = get_integer_conf("Joystick", "RIGHT_1", RPI_JOY_RIGHT);
-	sfc_joy[UP_1] = get_integer_conf("Joystick", "UP_1", RPI_JOY_UP);
-	sfc_joy[DOWN_1] = get_integer_conf("Joystick", "DOWN_1", RPI_JOY_DOWN);
-	sfc_joy[START_1] = get_integer_conf("Joystick", "START_1", RPI_JOY_START);
-	sfc_joy[SELECT_1] = get_integer_conf("Joystick", "SELECT_1", RPI_JOY_SELECT);
+    //Configure joysticks from config file or defaults
+    sfc_joy[A_1] = get_integer_conf("Joystick", "A_1", RPI_JOY_A);
+    sfc_joy[B_1] = get_integer_conf("Joystick", "B_1", RPI_JOY_B);
+    sfc_joy[X_1] = get_integer_conf("Joystick", "X_1", RPI_JOY_X);
+    sfc_joy[Y_1] = get_integer_conf("Joystick", "Y_1", RPI_JOY_Y);
+    sfc_joy[L_1] = get_integer_conf("Joystick", "L_1", RPI_JOY_L);
+    sfc_joy[R_1] = get_integer_conf("Joystick", "R_1", RPI_JOY_R);
+    sfc_joy[LEFT_1] = get_integer_conf("Joystick", "LEFT_1", RPI_JOY_LEFT);
+    sfc_joy[RIGHT_1] = get_integer_conf("Joystick", "RIGHT_1", RPI_JOY_RIGHT);
+    sfc_joy[UP_1] = get_integer_conf("Joystick", "UP_1", RPI_JOY_UP);
+    sfc_joy[DOWN_1] = get_integer_conf("Joystick", "DOWN_1", RPI_JOY_DOWN);
+    sfc_joy[START_1] = get_integer_conf("Joystick", "START_1", RPI_JOY_START);
+    sfc_joy[SELECT_1] = get_integer_conf("Joystick", "SELECT_1", RPI_JOY_SELECT);
 
     sfc_joy[A_2] = get_integer_conf("Joystick", "A_2", RPI_JOY_A);
     sfc_joy[B_2] = get_integer_conf("Joystick", "B_2", RPI_JOY_B);
@@ -494,24 +494,24 @@ void S9xInitInputDevices ()
     sfc_joy[Y_2] = get_integer_conf("Joystick", "Y_2", RPI_JOY_Y);
     sfc_joy[L_2] = get_integer_conf("Joystick", "L_2", RPI_JOY_L);
     sfc_joy[R_2] = get_integer_conf("Joystick", "R_2", RPI_JOY_R);
-	sfc_joy[LEFT_2] = get_integer_conf("Joystick", "LEFT_2", RPI_JOY_LEFT);
-	sfc_joy[RIGHT_2] = get_integer_conf("Joystick", "RIGHT_2", RPI_JOY_RIGHT);
-	sfc_joy[UP_2] = get_integer_conf("Joystick", "UP_2", RPI_JOY_UP);
-	sfc_joy[DOWN_2] = get_integer_conf("Joystick", "DOWN_2", RPI_JOY_DOWN);
+    sfc_joy[LEFT_2] = get_integer_conf("Joystick", "LEFT_2", RPI_JOY_LEFT);
+    sfc_joy[RIGHT_2] = get_integer_conf("Joystick", "RIGHT_2", RPI_JOY_RIGHT);
+    sfc_joy[UP_2] = get_integer_conf("Joystick", "UP_2", RPI_JOY_UP);
+    sfc_joy[DOWN_2] = get_integer_conf("Joystick", "DOWN_2", RPI_JOY_DOWN);
     sfc_joy[START_2] = get_integer_conf("Joystick", "START_2", RPI_JOY_START);
     sfc_joy[SELECT_2] = get_integer_conf("Joystick", "SELECT_2", RPI_JOY_SELECT);
 
-	sfc_joy[QUIT] = get_integer_conf("Joystick", "QUIT", RPI_JOY_QUIT);
-	sfc_joy[ACCEL] = get_integer_conf("Joystick", "ACCEL", RPI_JOY_ACCEL);
+    sfc_joy[QUIT] = get_integer_conf("Joystick", "QUIT", RPI_JOY_QUIT);
+    sfc_joy[ACCEL] = get_integer_conf("Joystick", "ACCEL", RPI_JOY_ACCEL);
 
-	sfc_joy[QLOAD] = get_integer_conf("Joystick", "QLOAD", RPI_JOY_QLOAD);
-	sfc_joy[QSAVE] = get_integer_conf("Joystick", "QSAVE", RPI_JOY_QSAVE);
+    sfc_joy[QLOAD] = get_integer_conf("Joystick", "QLOAD", RPI_JOY_QLOAD);
+    sfc_joy[QSAVE] = get_integer_conf("Joystick", "QSAVE", RPI_JOY_QSAVE);
 
-	//Read joystick axis to use, default to 0 & 1
-	joyaxis_LR = get_integer_conf("Joystick", "JA_LR", 0);
-	joyaxis_UD = get_integer_conf("Joystick", "JA_UD", 1);
+    //Read joystick axis to use, default to 0 & 1
+    joyaxis_LR = get_integer_conf("Joystick", "JA_LR", 0);
+    joyaxis_UD = get_integer_conf("Joystick", "JA_UD", 1);
 
-	close_config_file();
+    close_config_file();
 }
 	
 
@@ -528,15 +528,15 @@ const char *S9xGetSnapshotDirectory ()
 	if (!(snapshot = getenv ("SNES9X_SNAPSHOT_DIR")) &&
 	!(snapshot = getenv ("SNES96_SNAPSHOT_DIR")))
 	{
-	const char *home = GetHomeDirectory ();
-	strcpy (filename, home);
-	strcat (filename, SLASH_STR);
-	strcat (filename, ".snes96_snapshots");
-	mkdir (filename, 0777);
-	chown (filename, getuid (), getgid ());
+	    const char *home = GetHomeDirectory ();
+	    strcpy (filename, home);
+	    strcat (filename, SLASH_STR);
+	    strcat (filename, ".snes96_snapshots");
+	    mkdir (filename, 0777);
+	    chown (filename, getuid (), getgid ());
 	}
 	else
-	return (snapshot);
+	    return (snapshot);
 
 	return (filename);
 }
