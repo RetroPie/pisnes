@@ -10,6 +10,10 @@
 #include <glib.h>
 #include <bcm_host.h>
 
+//sqtest
+#include <jpeglib.h>
+#include <jerror.h>
+
 #include "keyconstants.h"
 #include "keys.h"
 
@@ -25,14 +29,17 @@ unsigned short *fe_screen;
 
 static void initSDL(void);
 static void fe_exit(void);
-static void frontend_display(void);
+static void frontend_display(int gameid);
 static void frontend_deinit(void);
 static void frontend_init(void);
 static void fe_gamelist_text_out(int x, int y, char *eltexto, int color);
 static void fe_gamelist_text_out_fmt(int x, int y, char* fmt, ...);
 static void fe_text(unsigned short *screen, int x, int y, char *text, int color);
+static void preview_init(int x, int y);
+static void preview_deinit(void);
 
 uint8 *keyssnes;
+
 
 struct fe_driver {
 //sq	char description[128];
@@ -42,6 +49,11 @@ struct fe_driver {
 struct fe_driver fe_drivers[3000];
 
 #define color16(R,G,B)  ((R >> 3) << 11) | (( G >> 2) << 5 ) | (( B >> 3 ) << 0 )
+
+uint32_t display_width=0, display_height=0;
+DISPMANX_ELEMENT_HANDLE_T preview_element;
+DISPMANX_RESOURCE_HANDLE_T preview_resource;
+
 
 static void show_bmp_16bpp(unsigned short *out, unsigned short *in)
 {
@@ -158,6 +170,81 @@ static void load_bitmaps(void) {
 		printf("\nERROR: Menu screen missing from skins directory\n");
 		fe_exit();
 	}
+}
+
+//sqtest
+static int LoadJPEG(char* FileName)
+{
+  unsigned long x, y;
+  unsigned int texture_id;
+  unsigned long data_size;     // length of the file
+  int channels;               //  3 =>RGB   4 =>RGBA 
+  unsigned int type;  
+  unsigned char * rowptr[1];    // pointer to an array
+  unsigned char * jdata;        // data for the image
+  struct jpeg_decompress_struct info; //for our jpeg info
+  struct jpeg_error_mgr err;          //the error handler
+
+  FILE* file = fopen(FileName, "rb");  //open the file
+
+  info.err = jpeg_std_error(& err);     
+  jpeg_create_decompress(& info);   //fills info structure
+
+  //if the jpeg file doesn't load
+  if(!file) {
+     fprintf(stderr, "Error reading JPEG file %s!", FileName);
+preview_deinit();
+     return 0;
+  }
+
+  jpeg_stdio_src(&info, file);    
+  jpeg_read_header(&info, TRUE);   // read jpeg file header
+
+  jpeg_start_decompress(&info);    // decompress the file
+
+  //set width and height
+  x = info.output_width;
+  y = info.output_height;
+  channels = info.num_components;
+//sq  type = GL_RGB;
+//sq  if(channels == 4) type = GL_RGBA;
+
+printf("x %d, y %d, channels %d\n",x,y,channels);
+
+  data_size = x * y * 3;
+
+  //--------------------------------------------
+  // read scanlines one at a time & put bytes 
+  //    in jdata[] array. Assumes an RGB image
+  //--------------------------------------------
+  jdata = (unsigned char *)malloc(data_size);
+  while (info.output_scanline < info.output_height) // loop
+  {
+    // Enable jpeg_read_scanlines() to fill our jdata array
+    rowptr[0] = (unsigned char *)jdata +  // secret to method
+            3* info.output_width * info.output_scanline; 
+
+    jpeg_read_scanlines(&info, rowptr, 1);
+  }
+  //---------------------------------------------------
+
+  jpeg_finish_decompress(&info);   //finish decompressing
+
+  //----- create OpenGL tex map (omit if not needed) --------
+//sq  glGenTextures(1,&texture_id);
+//sq  glBindTexture(GL_TEXTURE_2D, texture_id);
+//sq  gluBuild2DMipmaps(GL_TEXTURE_2D,3,x,y,GL_RGB,GL_UNSIGNED_BYTE,jdata);
+
+  VC_RECT_T dst_rect;
+  vc_dispmanx_rect_set( &dst_rect, 0, 0, x, y );
+
+  preview_init(x,y);
+  vc_dispmanx_resource_write_data( preview_resource, VC_IMAGE_RGB888, x*3, jdata, &dst_rect );
+
+  fclose(file);                    //close the file
+  free(jdata);
+
+  return texture_id;    // for OpenGL tex maps
 }
 
 static int strcompare(const struct dirent **left, const struct dirent **right)
@@ -481,13 +568,13 @@ static void select_game(char *game)
 	strcpy(game,"builtinn");
 
 	/* Clean screen */
-	frontend_display();
+	frontend_display(0);
 
 	/* Wait until user selects a game */
 	while(1)
 	{
 		game_list_view(&last_game_selected);
-		frontend_display();
+		frontend_display(last_game_selected);
        	usleep(70000);
 
 		while(1)
@@ -588,7 +675,7 @@ int main (int argc, char **argv)
 			/* Draw background image */
 	    	show_bmp_16bpp(fe_screen, fe_menu_bmp);
 			fe_gamelist_text_out(35, 110, "ERROR: NO AVAILABLE GAMES FOUND",color16(255,255,255));
-			frontend_display();
+			frontend_display(0);
 			sleep(5);
 			fe_exit();
 		}
@@ -633,6 +720,7 @@ DISPMANX_ELEMENT_HANDLE_T fe_element;
 DISPMANX_DISPLAY_HANDLE_T fe_display;
 DISPMANX_UPDATE_HANDLE_T fe_update;
 
+
 static void initSDL(void)
 {
 
@@ -663,11 +751,58 @@ static void initSDL(void)
     } 
 }
 
-static void frontend_init(void)
+static void preview_init(int x, int y)
+{
+    VC_RECT_T dst_rect;
+    VC_RECT_T src_rect;
+	uint32_t crap;
+    int ret;
+    int tx,ty,txwidth,tywidth;
+
+    if (preview_resource) {
+        ret = vc_dispmanx_resource_delete( preview_resource );
+        preview_resource = NULL;
+    }
+    preview_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB888, x, y, &crap);
+
+    //Workout position and size based on screen size, based on 640x480 display
+    //Width would always be 640 and stretched to match the display, height
+    //would change according to the picture ratio
+
+    tx = (float) 400 / (float) 640 * (float) display_width;
+    ty = (float) 186 / (float) 480 * (float) display_height;
+    txwidth = (float) 250 / (float) 640 * (float) display_width;
+    tywidth = (float) 183 / (float) y * (float) display_height;
+
+    // Preview display
+    //sq vc_dispmanx_rect_set( &dst_rect, 400, 186, 200, 180);
+    vc_dispmanx_rect_set( &dst_rect, tx, ty, txwidth, tywidth);
+    vc_dispmanx_rect_set( &src_rect, 0, 0, x << 16, y << 16);
+    if(preview_element) {
+        ret = vc_dispmanx_element_remove( fe_update, preview_element );
+        preview_element = NULL;
+    }
+    preview_element = vc_dispmanx_element_add( fe_update,
+           fe_display, 2, &dst_rect, preview_resource, &src_rect,
+           DISPMANX_PROTECTION_NONE, 0, 0, (DISPMANX_TRANSFORM_T) 0 );
+}
+	
+static void preview_deinit()
 {
     int ret;
 
-    uint32_t display_width=0, display_height=0;
+    if (preview_resource) {
+        ret = vc_dispmanx_resource_delete( preview_resource );
+    }
+
+    if(preview_element) {
+        ret = vc_dispmanx_element_remove( fe_update, preview_element );
+    }
+}	
+
+static void frontend_init(void)
+{
+    int ret;
 
     VC_RECT_T dst_rect;
     VC_RECT_T src_rect;
@@ -686,6 +821,7 @@ static void frontend_init(void)
     uint32_t crap;
     fe_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 640, 480, &crap);
 
+
     vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height);
     vc_dispmanx_rect_set( &src_rect, 0, 0, 640 << 16, 480 << 16);
 
@@ -693,9 +829,17 @@ static void frontend_init(void)
     fe_update = vc_dispmanx_update_start( 0 );
 
     // create the 'window' element - based on the first buffer resource (resource0)
-    fe_element = vc_dispmanx_element_add(  fe_update,
+    fe_element = vc_dispmanx_element_add( fe_update,
            fe_display, 1, &dst_rect, fe_resource, &src_rect,
            DISPMANX_PROTECTION_NONE, 0, 0, (DISPMANX_TRANSFORM_T) 0 );
+
+//sq    // Preview display
+//sq    preview_init(640,480);
+//sq    vc_dispmanx_rect_set( &dst_rect, 400, 186, 200, 180);
+//sq    vc_dispmanx_rect_set( &src_rect, 0, 0, 640 << 16, 480 << 16);
+//sq    preview_element = vc_dispmanx_element_add( fe_update,
+//sq           fe_display, 2, &dst_rect, preview_resource, &src_rect,
+//sq           DISPMANX_PROTECTION_NONE, 0, 0, (DISPMANX_TRANSFORM_T) 0 );
 
     ret = vc_dispmanx_update_submit_sync( fe_update );
 
@@ -718,9 +862,11 @@ static void frontend_deinit(void)
 
 }
 
-static void frontend_display(void)
+static void frontend_display(int gameid)
 {
     VC_RECT_T dst_rect;
+    int loadjpegres;
+    char filestr[3000];
 
     vc_dispmanx_rect_set( &dst_rect, 0, 0, 640, 480 );
 
@@ -729,6 +875,15 @@ static void frontend_display(void)
 
     // blit image to the current resource
     vc_dispmanx_resource_write_data( fe_resource, VC_IMAGE_RGB565, 640*2, fe_screen, &dst_rect );
+
+	strcpy(filestr,"preview/");
+    strncat(filestr, fe_drivers[gameid].name, strlen(fe_drivers[gameid].name)-4);
+    strcat(filestr, ".jpg");
+
+printf("filename %s\n",filestr);
+
+    //loadjpegres=LoadJPEG("/home/squinn/Documents/Development/pisnes/new.jpg");
+    loadjpegres=LoadJPEG(filestr);
 
     vc_dispmanx_update_submit_sync( fe_update );
 
