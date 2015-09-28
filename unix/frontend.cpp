@@ -14,6 +14,9 @@
 #include <jpeglib.h>
 #include <jerror.h>
 
+//sqtest
+#include <time.h>
+
 #include "keyconstants.h"
 #include "keys.h"
 
@@ -172,79 +175,83 @@ static void load_bitmaps(void) {
 	}
 }
 
-//sqtest
 static int LoadJPEG(char* FileName)
 {
-  unsigned long x, y;
-  unsigned int texture_id;
-  unsigned long data_size;     // length of the file
-  int channels;               //  3 =>RGB   4 =>RGBA 
-  unsigned int type;  
-  unsigned char * rowptr[1];    // pointer to an array
-  unsigned char * jdata;        // data for the image
-  struct jpeg_decompress_struct info; //for our jpeg info
-  struct jpeg_error_mgr err;          //the error handler
+    unsigned long x, y;
+    unsigned int texture_id;
+    unsigned long data_size;     // length of the file
+    unsigned int type;  
+    unsigned char * rowptr[1];    // pointer to an array
+    unsigned char * jdata;        // data for the image
+    struct jpeg_decompress_struct dinfo; //for our jpeg info
+    struct jpeg_error_mgr err;          //the error handler
 
-  FILE* file = fopen(FileName, "rb");  //open the file
+    FILE* file = fopen(FileName, "rb");  //open the file
 
-  info.err = jpeg_std_error(& err);     
-  jpeg_create_decompress(& info);   //fills info structure
+    dinfo.err = jpeg_std_error(&err);     
+    jpeg_create_decompress(&dinfo);   //fills dinfo structure
 
-  //if the jpeg file doesn't load
-  if(!file) {
-     fprintf(stderr, "Error reading JPEG file %s!", FileName);
-preview_deinit();
-     return 0;
-  }
+    //if the jpeg file doesn't load
+    if(!file) {
+        jpeg_destroy_decompress(&dinfo);
+        preview_deinit();
+        return 0;
+    }
 
-  jpeg_stdio_src(&info, file);    
-  jpeg_read_header(&info, TRUE);   // read jpeg file header
+    jpeg_stdio_src(&dinfo, file);    
+    jpeg_read_header(&dinfo, TRUE);   // read jpeg file header
 
-  jpeg_start_decompress(&info);    // decompress the file
+    //Only support images width 640 or smaller, too large
+    //will break dispmanx element and also be too slow
+    if(dinfo.image_width > 640) {
+        jpeg_destroy_decompress(&dinfo);
+        preview_deinit();
+        fclose(file);
+        return 0;
+    } 
 
-  //set width and height
-  x = info.output_width;
-  y = info.output_height;
-  channels = info.num_components;
-//sq  type = GL_RGB;
-//sq  if(channels == 4) type = GL_RGBA;
+    //Speed up decompression
+    dinfo.dither_mode = JDITHER_ORDERED;
+    dinfo.dct_method = JDCT_IFAST;
+    dinfo.do_fancy_upsampling = FALSE;
+    dinfo.two_pass_quantize = FALSE;
 
-printf("x %d, y %d, channels %d\n",x,y,channels);
+    jpeg_start_decompress(&dinfo);    // decompress the file
 
-  data_size = x * y * 3;
+    //set width and height
+    x = dinfo.output_width;
+    y = dinfo.output_height;
 
-  //--------------------------------------------
-  // read scanlines one at a time & put bytes 
-  //    in jdata[] array. Assumes an RGB image
-  //--------------------------------------------
-  jdata = (unsigned char *)malloc(data_size);
-  while (info.output_scanline < info.output_height) // loop
-  {
-    // Enable jpeg_read_scanlines() to fill our jdata array
-    rowptr[0] = (unsigned char *)jdata +  // secret to method
-            3* info.output_width * info.output_scanline; 
+    data_size = x * y * 3;
 
-    jpeg_read_scanlines(&info, rowptr, 1);
-  }
-  //---------------------------------------------------
+    //--------------------------------------------
+    // read scanlines one at a time & put bytes 
+    //    in jdata[] array. Assumes an RGB image
+    //--------------------------------------------
+    jdata = (unsigned char *)malloc(data_size);
+    while (dinfo.output_scanline < dinfo.output_height) // loop
+    {
+      // Enable jpeg_read_scanlines() to fill our jdata array
+      rowptr[0] = (unsigned char *)jdata +  // secret to method
+              3 * dinfo.output_width * dinfo.output_scanline; 
 
-  jpeg_finish_decompress(&info);   //finish decompressing
+      jpeg_read_scanlines(&dinfo, rowptr, 1);
+    }
+    //---------------------------------------------------
 
-  //----- create OpenGL tex map (omit if not needed) --------
-//sq  glGenTextures(1,&texture_id);
-//sq  glBindTexture(GL_TEXTURE_2D, texture_id);
-//sq  gluBuild2DMipmaps(GL_TEXTURE_2D,3,x,y,GL_RGB,GL_UNSIGNED_BYTE,jdata);
+    jpeg_finish_decompress(&dinfo);   //finish decompressing
 
-  VC_RECT_T dst_rect;
-  vc_dispmanx_rect_set( &dst_rect, 0, 0, x, y );
+    //Reinitialise dispmanx element based on size of image and write to resource
+    VC_RECT_T dst_rect;
+    vc_dispmanx_rect_set( &dst_rect, 0, 0, x, y );
 
-  preview_init(x,y);
-  vc_dispmanx_resource_write_data( preview_resource, VC_IMAGE_RGB888, x*3, jdata, &dst_rect );
+    preview_init(x,y);
+    vc_dispmanx_resource_write_data( preview_resource, VC_IMAGE_RGB888, x*3, jdata, &dst_rect );
 
-  fclose(file);                    //close the file
-  free(jdata);
+    fclose(file);
+    free(jdata);
 
-  return texture_id;    // for OpenGL tex maps
+    return TRUE;
 }
 
 static int strcompare(const struct dirent **left, const struct dirent **right)
@@ -641,7 +648,7 @@ int main (int argc, char **argv)
     char abspath[1000];
 
 	//create options string for later passing to runtime
-	options[0]=NULL;
+	options[0]=0;
 	if(argc > 1) {
 		for(i=1;i<argc;i++) {
 			strcat(options, argv[i]);
@@ -757,11 +764,11 @@ static void preview_init(int x, int y)
     VC_RECT_T src_rect;
 	uint32_t crap;
     int ret;
-    int tx,ty,txwidth,tywidth;
+    int tx,ty,twidth,theight;
 
     if (preview_resource) {
         ret = vc_dispmanx_resource_delete( preview_resource );
-        preview_resource = NULL;
+        preview_resource = 0;
     }
     preview_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB888, x, y, &crap);
 
@@ -771,17 +778,22 @@ static void preview_init(int x, int y)
 
     tx = (float) 400 / (float) 640 * (float) display_width;
     ty = (float) 186 / (float) 480 * (float) display_height;
-    txwidth = (float) 250 / (float) 640 * (float) display_width;
-    tywidth = (float) 183 / (float) y * (float) display_height;
+
+//640x473
+    twidth = (float) 210 / (float) 640 * (float) display_width;
+    theight = (float) twidth / (float) ((float) x / (float) y);
 
     // Preview display
-    //sq vc_dispmanx_rect_set( &dst_rect, 400, 186, 200, 180);
-    vc_dispmanx_rect_set( &dst_rect, tx, ty, txwidth, tywidth);
+    //sq vc_dispmanx_rect_set( &dst_rect, 400, 186, 210, 155);
+
     vc_dispmanx_rect_set( &src_rect, 0, 0, x << 16, y << 16);
+    vc_dispmanx_rect_set( &dst_rect, tx, ty, twidth, theight);
+
     if(preview_element) {
         ret = vc_dispmanx_element_remove( fe_update, preview_element );
-        preview_element = NULL;
+        preview_element = 0;
     }
+
     preview_element = vc_dispmanx_element_add( fe_update,
            fe_display, 2, &dst_rect, preview_resource, &src_rect,
            DISPMANX_PROTECTION_NONE, 0, 0, (DISPMANX_TRANSFORM_T) 0 );
@@ -793,10 +805,12 @@ static void preview_deinit()
 
     if (preview_resource) {
         ret = vc_dispmanx_resource_delete( preview_resource );
+        preview_resource = 0;
     }
 
     if(preview_element) {
         ret = vc_dispmanx_element_remove( fe_update, preview_element );
+        preview_element = 0;
     }
 }	
 
@@ -850,6 +864,7 @@ static void frontend_deinit(void)
     int ret;
 
     fe_update = vc_dispmanx_update_start( 0 );
+    preview_deinit();
     ret = vc_dispmanx_element_remove( fe_update, fe_element );
     ret = vc_dispmanx_update_submit_sync( fe_update );
     ret = vc_dispmanx_resource_delete( fe_resource );
@@ -865,7 +880,6 @@ static void frontend_deinit(void)
 static void frontend_display(int gameid)
 {
     VC_RECT_T dst_rect;
-    int loadjpegres;
     char filestr[3000];
 
     vc_dispmanx_rect_set( &dst_rect, 0, 0, 640, 480 );
@@ -876,14 +890,12 @@ static void frontend_display(int gameid)
     // blit image to the current resource
     vc_dispmanx_resource_write_data( fe_resource, VC_IMAGE_RGB565, 640*2, fe_screen, &dst_rect );
 
+    // Load and display game preview image if one exists
 	strcpy(filestr,"preview/");
     strncat(filestr, fe_drivers[gameid].name, strlen(fe_drivers[gameid].name)-4);
     strcat(filestr, ".jpg");
 
-printf("filename %s\n",filestr);
-
-    //loadjpegres=LoadJPEG("/home/squinn/Documents/Development/pisnes/new.jpg");
-    loadjpegres=LoadJPEG(filestr);
+    LoadJPEG(filestr);
 
     vc_dispmanx_update_submit_sync( fe_update );
 
