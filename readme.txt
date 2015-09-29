@@ -17,23 +17,23 @@ https://sourceforge.net/projects/pisnes
 
 CONTROLS
 --------
-                   KEYBOARD     XBOX360 CONTROLS
-* Up direction     up arrow     
-* Down direction   down arrow
-* Left direction   left arrow
-* Right direction  right arrow
-* X button         s            Y
-* Y button         x            X
-* A button         d            B
-* B button         c            A
-* TL button        a            TL
-* TR button        f            TR
-* Start button     return       START
-* Select button    tab          BACK
-* Turbo            backspace
-* Quit             escape       BACK+START
-* Quickload 1-4    F1-F4        RIGHT THUMB
-* Quicksave 1-4    Shift F1-F4  LEFT THUMB
+                     KEYBOARD     XBOX360 CONTROLS
+    Up direction     up arrow     
+    Down direction   down arrow
+    Left direction   left arrow
+    Right direction  right arrow
+    X button         s            Y
+    Y button         x            X
+    A button         d            B
+    B button         c            A
+    TL button        a            TL
+    TR button        f            TR
+    Start button     return       START
+    Select button    tab          BACK
+    Turbo            backspace
+    Quit             escape       BACK+START
+    Quickload 1-4    F1-F4        RIGHT THUMB
+    Quicksave 1-4    Shift F1-F4  LEFT THUMB
 
 The joystick layout defaults to XBOX 360 controller button layout.
 
