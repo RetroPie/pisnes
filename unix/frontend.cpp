@@ -35,6 +35,7 @@ static void fe_gamelist_text_out_fmt(int x, int y, char* fmt, ...);
 static void fe_text(unsigned short *screen, int x, int y, char *text, int color);
 static void preview_init(int x, int y);
 static void preview_deinit(void);
+static int loadJPEG(char* FileName);
 
 uint8 *keyssnes;
 
@@ -49,8 +50,10 @@ struct fe_driver fe_drivers[3000];
 #define color16(R,G,B)  ((R >> 3) << 11) | (( G >> 2) << 5 ) | (( B >> 3 ) << 0 )
 
 uint32_t display_width=0, display_height=0;
-DISPMANX_ELEMENT_HANDLE_T preview_element;
-DISPMANX_RESOURCE_HANDLE_T preview_resource;
+DISPMANX_RESOURCE_HANDLE_T fe_resource, preview_resource;
+DISPMANX_ELEMENT_HANDLE_T fe_element, preview_element;
+DISPMANX_DISPLAY_HANDLE_T fe_display;
+DISPMANX_UPDATE_HANDLE_T fe_update;
 
 
 static void show_bmp_16bpp(unsigned short *out, unsigned short *in)
@@ -170,7 +173,7 @@ static void load_bitmaps(void) {
 	}
 }
 
-static int LoadJPEG(char* FileName)
+static int loadJPEG(char* FileName)
 {
     unsigned long x, y;
     unsigned int texture_id;
@@ -189,7 +192,6 @@ static int LoadJPEG(char* FileName)
     //if the jpeg file doesn't load
     if(!file) {
         jpeg_destroy_decompress(&dinfo);
-        preview_deinit();
         return 0;
     }
 
@@ -200,7 +202,6 @@ static int LoadJPEG(char* FileName)
     //will break dispmanx element and also be too slow
     if(dinfo.image_width > 640) {
         jpeg_destroy_decompress(&dinfo);
-        preview_deinit();
         fclose(file);
         return 0;
     } 
@@ -236,12 +237,17 @@ static int LoadJPEG(char* FileName)
 
     jpeg_finish_decompress(&dinfo);   //finish decompressing
 
-    //Reinitialise dispmanx element based on size of image and write to resource
+    //Initialise dispmanx element based on size of image and write to resource
     VC_RECT_T dst_rect;
     vc_dispmanx_rect_set( &dst_rect, 0, 0, x, y );
 
     preview_init(x,y);
-    vc_dispmanx_resource_write_data( preview_resource, VC_IMAGE_RGB888, x*3, jdata, &dst_rect );
+    vc_dispmanx_resource_write_data( 
+                preview_resource, 
+                VC_IMAGE_RGB888, 
+                x*3,  // RGB888 so 3 bytes per pixel
+                jdata, 
+                &dst_rect );
 
     fclose(file);
     free(jdata);
@@ -681,30 +687,16 @@ int main (int argc, char **argv)
 			fe_exit();
 		}
 	
-	//sq	/* Read default configuration */
-	//sq	f=fopen("frontend/mame.cfg","r");
-	//sq	if (f) {
-	//sq		fscanf(f,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",&gp2x_freq,&gp2x_video_depth,&gp2x_video_aspect,&gp2x_video_sync,
-	//sq		&gp2x_frameskip,&gp2x_sound,&gp2x_clock_cpu,&gp2x_clock_sound,&gp2x_cpu_cores,&gp2x_ramtweaks,&last_game_selected,&gp2x_cheat,&gp2x_volume);
-	//sq		fclose(f);
-		//sq}
-		
 		/* Select Game */
 		select_game(playgame); 
 	
-		/* Write default configuration */
-	//sq 	f=fopen("frontend/mame.cfg","w");
-	//sq 	if (f) {
-	//sq 		fprintf(f,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",gp2x_freq,gp2x_video_depth,gp2x_video_aspect,gp2x_video_sync,
-	//sq 		gp2x_frameskip,gp2x_sound,gp2x_clock_cpu,gp2x_clock_sound,gp2x_cpu_cores,gp2x_ramtweaks,last_game_selected,gp2x_cheat,gp2x_volume);
-	//sq 		fclose(f);
-	//sq 		sync();
-	//sq 	}
-	
-		//Quit SDL input before starting Game
+		//Quit SDL input before starting Game and tidy dispmanx
 		SDL_Quit();
 
-	
+        fe_update = vc_dispmanx_update_start( 0 );
+        preview_deinit();
+        vc_dispmanx_update_submit_sync( fe_update );
+
 		//Run the actual game
 		//Using system seems to work better with snes9x
 		sprintf(gamename, "./snes9x %s \"roms/%s\"", options, playgame);
@@ -715,11 +707,6 @@ int main (int argc, char **argv)
 	}
 	
 }
-
-DISPMANX_RESOURCE_HANDLE_T fe_resource;
-DISPMANX_ELEMENT_HANDLE_T fe_element;
-DISPMANX_DISPLAY_HANDLE_T fe_display;
-DISPMANX_UPDATE_HANDLE_T fe_update;
 
 
 static void initSDL(void)
@@ -756,7 +743,7 @@ static void preview_init(int x, int y)
 {
     VC_RECT_T dst_rect;
     VC_RECT_T src_rect;
-	uint32_t crap;
+	uint32_t vc_image_ptr;
     int ret;
     int tx,ty,twidth,theight;
 
@@ -764,22 +751,19 @@ static void preview_init(int x, int y)
         ret = vc_dispmanx_resource_delete( preview_resource );
         preview_resource = 0;
     }
-    preview_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB888, x, y, &crap);
+    preview_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB888, x, y, &vc_image_ptr);
 
-    //Workout position and size based on screen size, based on 640x480 display
+    //Workout position and size based on screen size 640x480 display
     //Width would always be 640 and stretched to match the display, height
     //would change according to the picture ratio
 
     tx = (float) 392 / (float) 640 * (float) display_width;
     ty = (float) 174 / (float) 480 * (float) display_height;
 
-//640x473
     twidth = (float) 234 / (float) 640 * (float) display_width;
     theight = (float) twidth / (float) ((float) x / (float) y);
 
     // Preview display
-    //sq vc_dispmanx_rect_set( &dst_rect, 400, 186, 210, 155);
-
     vc_dispmanx_rect_set( &src_rect, 0, 0, x << 16, y << 16);
     vc_dispmanx_rect_set( &dst_rect, tx, ty, twidth, theight);
 
@@ -788,9 +772,16 @@ static void preview_init(int x, int y)
         preview_element = 0;
     }
 
-    preview_element = vc_dispmanx_element_add( fe_update,
-           fe_display, 2, &dst_rect, preview_resource, &src_rect,
-           DISPMANX_PROTECTION_NONE, 0, 0, (DISPMANX_TRANSFORM_T) 0 );
+    preview_element = vc_dispmanx_element_add( 
+                fe_update,
+                fe_display, 
+                2, //Layer, one above main layer
+                &dst_rect, 
+                preview_resource, 
+                &src_rect,
+                DISPMANX_PROTECTION_NONE, 
+                0, 0, 
+                (DISPMANX_TRANSFORM_T) 0 );
 }
 	
 static void preview_deinit()
@@ -826,19 +817,25 @@ static void frontend_init(void)
 
     //Create two surfaces for flipping between
     //Make sure bitmap type matches the source for better performance
-    uint32_t crap;
-    fe_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 640, 480, &crap);
+    uint32_t vc_image_ptr;
+    fe_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 640, 480, &vc_image_ptr);
 
-    vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height);
     vc_dispmanx_rect_set( &src_rect, 0, 0, 640 << 16, 480 << 16);
+    vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height);
 
-    //Make sure mame and background overlay the menu program
     fe_update = vc_dispmanx_update_start( 0 );
 
     // create the 'window' element - based on the first buffer resource (resource0)
-    fe_element = vc_dispmanx_element_add( fe_update,
-           fe_display, 1, &dst_rect, fe_resource, &src_rect,
-           DISPMANX_PROTECTION_NONE, 0, 0, (DISPMANX_TRANSFORM_T) 0 );
+    fe_element = vc_dispmanx_element_add( 
+                    fe_update,
+                    fe_display, 
+                    1,  //Layer
+                    &dst_rect, 
+                    fe_resource, 
+                    &src_rect,
+                    DISPMANX_PROTECTION_NONE, 
+                    0, 0, 
+                    (DISPMANX_TRANSFORM_T) 0 );
 
     ret = vc_dispmanx_update_submit_sync( fe_update );
 }
@@ -880,7 +877,10 @@ static void frontend_display(int gameid)
         strncat(filestr, fe_drivers[gameid].name, strlen(fe_drivers[gameid].name)-4);
         strcat(filestr, ".jpg");
 
-        LoadJPEG(filestr);
+        preview_deinit();   //destroy preview element as loadJPEG will create a new one
+        if(!loadJPEG(filestr)) {
+            preview_deinit();
+        }
     }
 
     vc_dispmanx_update_submit_sync( fe_update );
