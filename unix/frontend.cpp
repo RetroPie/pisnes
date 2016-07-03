@@ -9,6 +9,8 @@
 //#include "allegro.h"
 #include <glib.h>
 #include <bcm_host.h>
+#include <jpeglib.h>
+#include <jerror.h>
 
 #include "keyconstants.h"
 #include "keys.h"
@@ -25,14 +27,18 @@ unsigned short *fe_screen;
 
 static void initSDL(void);
 static void fe_exit(void);
-static void frontend_display(void);
+static void frontend_display(int gameid);
 static void frontend_deinit(void);
 static void frontend_init(void);
 static void fe_gamelist_text_out(int x, int y, char *eltexto, int color);
 static void fe_gamelist_text_out_fmt(int x, int y, char* fmt, ...);
 static void fe_text(unsigned short *screen, int x, int y, char *text, int color);
+static void preview_init(int x, int y);
+static void preview_deinit(void);
+static int loadJPEG(char* FileName);
 
 uint8 *keyssnes;
+
 
 struct fe_driver {
 //sq	char description[128];
@@ -42,6 +48,13 @@ struct fe_driver {
 struct fe_driver fe_drivers[3000];
 
 #define color16(R,G,B)  ((R >> 3) << 11) | (( G >> 2) << 5 ) | (( B >> 3 ) << 0 )
+
+uint32_t display_width=0, display_height=0;
+DISPMANX_RESOURCE_HANDLE_T fe_resource, preview_resource;
+DISPMANX_ELEMENT_HANDLE_T fe_element, preview_element;
+DISPMANX_DISPLAY_HANDLE_T fe_display;
+DISPMANX_UPDATE_HANDLE_T fe_update;
+
 
 static void show_bmp_16bpp(unsigned short *out, unsigned short *in)
 {
@@ -160,6 +173,88 @@ static void load_bitmaps(void) {
 	}
 }
 
+static int loadJPEG(char* FileName)
+{
+    unsigned long x, y;
+    unsigned int texture_id;
+    unsigned long data_size;     // length of the file
+    unsigned int type;  
+    unsigned char * rowptr[1];    // pointer to an array
+    unsigned char * jdata;        // data for the image
+    struct jpeg_decompress_struct dinfo; //for our jpeg info
+    struct jpeg_error_mgr err;          //the error handler
+
+    FILE* file = fopen(FileName, "rb");  //open the file
+
+    dinfo.err = jpeg_std_error(&err);     
+    jpeg_create_decompress(&dinfo);   //fills dinfo structure
+
+    //if the jpeg file doesn't load
+    if(!file) {
+        jpeg_destroy_decompress(&dinfo);
+        return 0;
+    }
+
+    jpeg_stdio_src(&dinfo, file);    
+    jpeg_read_header(&dinfo, TRUE);   // read jpeg file header
+
+    //Only support images width 640 or smaller, too large
+    //will break dispmanx element and also be too slow
+    if(dinfo.image_width > 640) {
+        jpeg_destroy_decompress(&dinfo);
+        fclose(file);
+        return 0;
+    } 
+
+    //Speed up decompression
+    dinfo.dither_mode = JDITHER_ORDERED;
+    dinfo.dct_method = JDCT_IFAST;
+    dinfo.do_fancy_upsampling = FALSE;
+    dinfo.two_pass_quantize = FALSE;
+
+    jpeg_start_decompress(&dinfo);    // decompress the file
+
+    //set width and height
+    x = dinfo.output_width;
+    y = dinfo.output_height;
+
+    data_size = x * y * 3;
+
+    //--------------------------------------------
+    // read scanlines one at a time & put bytes 
+    //    in jdata[] array. Assumes an RGB image
+    //--------------------------------------------
+    jdata = (unsigned char *)malloc(data_size);
+    while (dinfo.output_scanline < dinfo.output_height) // loop
+    {
+      // Enable jpeg_read_scanlines() to fill our jdata array
+      rowptr[0] = (unsigned char *)jdata +  // secret to method
+              3 * dinfo.output_width * dinfo.output_scanline; 
+
+      jpeg_read_scanlines(&dinfo, rowptr, 1);
+    }
+    //---------------------------------------------------
+
+    jpeg_finish_decompress(&dinfo);   //finish decompressing
+
+    //Initialise dispmanx element based on size of image and write to resource
+    VC_RECT_T dst_rect;
+    vc_dispmanx_rect_set( &dst_rect, 0, 0, x, y );
+
+    preview_init(x,y);
+    vc_dispmanx_resource_write_data( 
+                preview_resource, 
+                VC_IMAGE_RGB888, 
+                x*3,  // RGB888 so 3 bytes per pixel
+                jdata, 
+                &dst_rect );
+
+    fclose(file);
+    free(jdata);
+
+    return TRUE;
+}
+
 static int strcompare(const struct dirent **left, const struct dirent **right)
 {
     return strcasecmp((*left)->d_name, (*right)->d_name);
@@ -225,7 +320,6 @@ static void game_list_view(int *pos) {
 				if (aux_pos==*pos) {
 					fe_gamelist_text_out( screen_x, screen_y, fe_drivers[i].name, color16(0,150,255));
 					fe_gamelist_text_out( screen_x-5, screen_y,">",color16(255,255,255) );
-		//sq			fe_gamelist_text_out( screen_x-7, screen_y-1,"-",color16(255,255,255) );
 				}
 				else {
 					fe_gamelist_text_out( screen_x, screen_y, fe_drivers[i].name, color16(255,255,255));
@@ -251,10 +345,15 @@ static void fe_exit(void)
 	exit(0);
 }
 
+SDL_Joystick *joy[2];
+
 uint8 joy_buttons[32];
-uint8 joy_axes[8];
+uint8 joy_axes[2][8];
 
 int joyaxis_LR, joyaxis_UD;
+
+#define JOYLR 0
+#define JOYUD 1
 
 #define NUMKEYS 256
 static Uint16 sfc_key[NUMKEYS];
@@ -262,6 +361,53 @@ static Uint16 sfc_joy[NUMKEYS];
 
 static void fe_ProcessEvents (void)
 {
+
+	int i, hatmovement=0;
+
+	//Process one joystick
+	for(i=0;i<1;i++) {
+		joy_axes[i][JOYLR] = CENTER;
+		joy_axes[i][JOYUD] = CENTER;
+
+		if(SDL_JoystickNumHats(joy[i]) > 0) {
+        	Uint8 hat = SDL_JoystickGetHat(joy[i], 0);
+			if (hat != 0) {
+				hatmovement=1;
+        		if(hat & SDL_HAT_UP) { joy_axes[i][JOYUD] = UP; }
+        		if(hat & SDL_HAT_DOWN) { joy_axes[i][JOYUD] = DOWN; }
+        		if(hat & SDL_HAT_LEFT) { joy_axes[i][JOYLR] = LEFT; }
+        		if(hat & SDL_HAT_RIGHT) { joy_axes[i][JOYLR] = RIGHT; }
+			}
+		}
+
+	    int axis = SDL_JoystickNumAxes(joy[i]);
+
+		//HAT movement overrides analogue as analogue always shows a value
+	    if(axis > 0 && !hatmovement) {
+			Sint16 x_move = SDL_JoystickGetAxis(joy[i], joyaxis_LR);
+			Sint16 y_move = SDL_JoystickGetAxis(joy[i], joyaxis_UD);
+	
+			if(x_move != 0) {
+				if(x_move > -10000 && x_move < 10000)
+					joy_axes[i][JOYLR] = CENTER;
+				else if(x_move > 10000)
+					joy_axes[i][JOYLR] = RIGHT;
+				else
+					joy_axes[i][JOYLR] = LEFT;
+			}
+	
+			if(y_move != 0) {
+				if(y_move > -10000 && y_move < 10000)
+					joy_axes[i][JOYUD] = CENTER;
+				else if(y_move > 10000)
+					joy_axes[i][JOYUD] = DOWN;
+				else
+					joy_axes[i][JOYUD] = UP;
+			}
+		}
+
+    }
+
 	SDL_Event event;
 	while(SDL_PollEvent(&event)) {
 		switch(event.type) {
@@ -270,24 +416,6 @@ static void fe_ProcessEvents (void)
 			break;
 		case SDL_JOYBUTTONUP:
 			joy_buttons[event.jbutton.button] = 0;
-			break;
-		case SDL_JOYAXISMOTION:
-			if(event.jaxis.axis == joyaxis_LR) {
-				if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
-					joy_axes[joyaxis_LR] = CENTER;
-				else if(event.jaxis.value > 10000)
-					joy_axes[joyaxis_LR] = RIGHT;
-				else
-					joy_axes[joyaxis_LR] = LEFT;
-			}
-			if(event.jaxis.axis == joyaxis_UD) {
-				if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
-					joy_axes[joyaxis_UD] = CENTER;
-				else if(event.jaxis.value > 10000)
-					joy_axes[joyaxis_UD] = DOWN;
-				else
-					joy_axes[joyaxis_UD] = UP;
-			}
 			break;
 		case SDL_KEYDOWN:
 			keyssnes = SDL_GetKeyState(NULL);
@@ -308,10 +436,16 @@ static uint32 fe_ReadJoypad (int which1)
 	if (keyssnes[sfc_key[B_1]] == SDL_PRESSED || joy_buttons[sfc_joy[B_1]])		val |= SNES_B_MASK;
 	if (keyssnes[sfc_key[START_1]] == SDL_PRESSED || joy_buttons[sfc_joy[START_1]])	val |= SNES_START_MASK;
 	if (keyssnes[sfc_key[SELECT_1]] == SDL_PRESSED || joy_buttons[sfc_joy[SELECT_1]])	val |= SNES_SELECT_MASK;
-	if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_axes[joyaxis_UD] == UP)		val |= SNES_UP_MASK;
-	if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[joyaxis_UD] == DOWN)	val |= SNES_DOWN_MASK;
-	if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[joyaxis_LR] == LEFT)	val |= SNES_LEFT_MASK;
-	if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[joyaxis_LR] == RIGHT)	val |= SNES_RIGHT_MASK;
+	if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_axes[0][JOYUD] == UP)		val |= SNES_UP_MASK;
+	if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[0][JOYUD] == DOWN)	val |= SNES_DOWN_MASK;
+	if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[0][JOYLR] == LEFT)	val |= SNES_LEFT_MASK;
+	if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[0][JOYLR] == RIGHT)	val |= SNES_RIGHT_MASK;
+
+	// DPAD special buttons
+    if (joy_buttons[sfc_joy[LEFT_1]])   val |= SNES_LEFT_MASK;
+    if (joy_buttons[sfc_joy[RIGHT_1]])  val |= SNES_RIGHT_MASK;
+    if (joy_buttons[sfc_joy[UP_1]]) val |= SNES_UP_MASK;
+    if (joy_buttons[sfc_joy[DOWN_1]])   val |= SNES_DOWN_MASK;
 
 	if (keyssnes[sfc_key[QUIT]] == SDL_PRESSED || joy_buttons[sfc_joy[QUIT]]) fe_exit();
 
@@ -359,7 +493,7 @@ static int get_keyjoy_conf (char *section, char *option, int defval)
 static void fe_S9xInitInputDevices ()
 {
 	memset(joy_buttons, 0, 32);
-	memset(joy_axes, 0, 8);
+	memset(joy_axes, 0, 8*2);
 	memset(sfc_key, 0, NUMKEYS*2);
 	memset(sfc_joy, 0, NUMKEYS*2);
 
@@ -399,6 +533,10 @@ static void fe_S9xInitInputDevices ()
 	sfc_joy[Y_1] = get_keyjoy_conf("Joystick", "Y_1", RPI_JOY_Y);
 	sfc_joy[L_1] = get_keyjoy_conf("Joystick", "L_1", RPI_JOY_L);
 	sfc_joy[R_1] = get_keyjoy_conf("Joystick", "R_1", RPI_JOY_R);
+    sfc_joy[LEFT_1] = get_keyjoy_conf("Joystick", "LEFT_1", RPI_JOY_LEFT);
+    sfc_joy[RIGHT_1] = get_keyjoy_conf("Joystick", "RIGHT_1", RPI_JOY_RIGHT);
+    sfc_joy[UP_1] = get_keyjoy_conf("Joystick", "UP_1", RPI_JOY_UP);
+    sfc_joy[DOWN_1] = get_keyjoy_conf("Joystick", "DOWN_1", RPI_JOY_DOWN);
 	sfc_joy[START_1] = get_keyjoy_conf("Joystick", "START_1", RPI_JOY_START);
 	sfc_joy[SELECT_1] = get_keyjoy_conf("Joystick", "SELECT_1", RPI_JOY_SELECT);
 
@@ -437,13 +575,13 @@ static void select_game(char *game)
 	strcpy(game,"builtinn");
 
 	/* Clean screen */
-	frontend_display();
+	frontend_display(-1);
 
 	/* Wait until user selects a game */
 	while(1)
 	{
 		game_list_view(&last_game_selected);
-		frontend_display();
+		frontend_display(last_game_selected);
        	usleep(70000);
 
 		while(1)
@@ -510,7 +648,7 @@ int main (int argc, char **argv)
     char abspath[1000];
 
 	//create options string for later passing to runtime
-	options[0]=NULL;
+	options[0]=0;
 	if(argc > 1) {
 		for(i=1;i<argc;i++) {
 			strcat(options, argv[i]);
@@ -544,35 +682,21 @@ int main (int argc, char **argv)
 			/* Draw background image */
 	    	show_bmp_16bpp(fe_screen, fe_menu_bmp);
 			fe_gamelist_text_out(35, 110, "ERROR: NO AVAILABLE GAMES FOUND",color16(255,255,255));
-			frontend_display();
+			frontend_display(-1);
 			sleep(5);
 			fe_exit();
 		}
 	
-	//sq	/* Read default configuration */
-	//sq	f=fopen("frontend/mame.cfg","r");
-	//sq	if (f) {
-	//sq		fscanf(f,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",&gp2x_freq,&gp2x_video_depth,&gp2x_video_aspect,&gp2x_video_sync,
-	//sq		&gp2x_frameskip,&gp2x_sound,&gp2x_clock_cpu,&gp2x_clock_sound,&gp2x_cpu_cores,&gp2x_ramtweaks,&last_game_selected,&gp2x_cheat,&gp2x_volume);
-	//sq		fclose(f);
-		//sq}
-		
 		/* Select Game */
 		select_game(playgame); 
 	
-		/* Write default configuration */
-	//sq 	f=fopen("frontend/mame.cfg","w");
-	//sq 	if (f) {
-	//sq 		fprintf(f,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",gp2x_freq,gp2x_video_depth,gp2x_video_aspect,gp2x_video_sync,
-	//sq 		gp2x_frameskip,gp2x_sound,gp2x_clock_cpu,gp2x_clock_sound,gp2x_cpu_cores,gp2x_ramtweaks,last_game_selected,gp2x_cheat,gp2x_volume);
-	//sq 		fclose(f);
-	//sq 		sync();
-	//sq 	}
-	
-		//Quit SDL input before starting Game
+		//Quit SDL input before starting Game and tidy dispmanx
 		SDL_Quit();
 
-	
+        fe_update = vc_dispmanx_update_start( 0 );
+        preview_deinit();
+        vc_dispmanx_update_submit_sync( fe_update );
+
 		//Run the actual game
 		//Using system seems to work better with snes9x
 		sprintf(gamename, "./snes9x %s \"roms/%s\"", options, playgame);
@@ -584,14 +708,9 @@ int main (int argc, char **argv)
 	
 }
 
-DISPMANX_RESOURCE_HANDLE_T fe_resource;
-DISPMANX_ELEMENT_HANDLE_T fe_element;
-DISPMANX_DISPLAY_HANDLE_T fe_display;
-DISPMANX_UPDATE_HANDLE_T fe_update;
 
 static void initSDL(void)
 {
-	SDL_Joystick* joy;
 
 	//SDL initialisation
     if (SDL_Init(SDL_INIT_JOYSTICK) < 0 )
@@ -609,9 +728,9 @@ static void initSDL(void)
     SDL_EventState(SDL_USEREVENT,SDL_IGNORE);
     SDL_ShowCursor(SDL_DISABLE);
 
-    joy = SDL_JoystickOpen(0);
+    joy[0] = SDL_JoystickOpen(0);
 
-    if(joy) {
+    if(joy[0]) {
 //sq        printf("Opened joystick 0.\n");
         if(SDL_JoystickEventState(SDL_ENABLE) != SDL_ENABLE) {
             printf("Could not set joystick event state\n", SDL_GetError());
@@ -620,11 +739,69 @@ static void initSDL(void)
     } 
 }
 
-static void frontend_init(void)
+static void preview_init(int x, int y)
+{
+    VC_RECT_T dst_rect;
+    VC_RECT_T src_rect;
+	uint32_t vc_image_ptr;
+    int ret;
+    int tx,ty,twidth,theight;
+
+    if (preview_resource) {
+        ret = vc_dispmanx_resource_delete( preview_resource );
+        preview_resource = 0;
+    }
+    preview_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB888, x, y, &vc_image_ptr);
+
+    //Workout position and size based on screen size 640x480 display
+    //Width would always be 640 and stretched to match the display, height
+    //would change according to the picture ratio
+
+    tx = (float) 392 / (float) 640 * (float) display_width;
+    ty = (float) 174 / (float) 480 * (float) display_height;
+
+    twidth = (float) 234 / (float) 640 * (float) display_width;
+    theight = (float) twidth / (float) ((float) x / (float) y);
+
+    // Preview display
+    vc_dispmanx_rect_set( &src_rect, 0, 0, x << 16, y << 16);
+    vc_dispmanx_rect_set( &dst_rect, tx, ty, twidth, theight);
+
+    if(preview_element) {
+        ret = vc_dispmanx_element_remove( fe_update, preview_element );
+        preview_element = 0;
+    }
+
+    preview_element = vc_dispmanx_element_add( 
+                fe_update,
+                fe_display, 
+                2, //Layer, one above main layer
+                &dst_rect, 
+                preview_resource, 
+                &src_rect,
+                DISPMANX_PROTECTION_NONE, 
+                0, 0, 
+                (DISPMANX_TRANSFORM_T) 0 );
+}
+	
+static void preview_deinit()
 {
     int ret;
 
-    uint32_t display_width=0, display_height=0;
+    if (preview_resource) {
+        ret = vc_dispmanx_resource_delete( preview_resource );
+        preview_resource = 0;
+    }
+
+    if(preview_element) {
+        ret = vc_dispmanx_element_remove( fe_update, preview_element );
+        preview_element = 0;
+    }
+}	
+
+static void frontend_init(void)
+{
+    int ret;
 
     VC_RECT_T dst_rect;
     VC_RECT_T src_rect;
@@ -640,22 +817,27 @@ static void frontend_init(void)
 
     //Create two surfaces for flipping between
     //Make sure bitmap type matches the source for better performance
-    uint32_t crap;
-    fe_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 640, 480, &crap);
+    uint32_t vc_image_ptr;
+    fe_resource = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 640, 480, &vc_image_ptr);
 
-    vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height);
     vc_dispmanx_rect_set( &src_rect, 0, 0, 640 << 16, 480 << 16);
+    vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height);
 
-    //Make sure mame and background overlay the menu program
     fe_update = vc_dispmanx_update_start( 0 );
 
     // create the 'window' element - based on the first buffer resource (resource0)
-    fe_element = vc_dispmanx_element_add(  fe_update,
-           fe_display, 1, &dst_rect, fe_resource, &src_rect,
-           DISPMANX_PROTECTION_NONE, 0, 0, (DISPMANX_TRANSFORM_T) 0 );
+    fe_element = vc_dispmanx_element_add( 
+                    fe_update,
+                    fe_display, 
+                    1,  //Layer
+                    &dst_rect, 
+                    fe_resource, 
+                    &src_rect,
+                    DISPMANX_PROTECTION_NONE, 
+                    0, 0, 
+                    (DISPMANX_TRANSFORM_T) 0 );
 
     ret = vc_dispmanx_update_submit_sync( fe_update );
-
 }
 
 static void frontend_deinit(void)
@@ -663,6 +845,7 @@ static void frontend_deinit(void)
     int ret;
 
     fe_update = vc_dispmanx_update_start( 0 );
+    preview_deinit();
     ret = vc_dispmanx_element_remove( fe_update, fe_element );
     ret = vc_dispmanx_update_submit_sync( fe_update );
     ret = vc_dispmanx_resource_delete( fe_resource );
@@ -675,9 +858,10 @@ static void frontend_deinit(void)
 
 }
 
-static void frontend_display(void)
+static void frontend_display(int gameid)
 {
     VC_RECT_T dst_rect;
+    char filestr[3000];
 
     vc_dispmanx_rect_set( &dst_rect, 0, 0, 640, 480 );
 
@@ -686,6 +870,18 @@ static void frontend_display(void)
 
     // blit image to the current resource
     vc_dispmanx_resource_write_data( fe_resource, VC_IMAGE_RGB565, 640*2, fe_screen, &dst_rect );
+
+    // Load and display game preview image if one exists
+    if(gameid >= 0) {
+        strcpy(filestr,"preview/");
+        strncat(filestr, fe_drivers[gameid].name, strlen(fe_drivers[gameid].name)-4);
+        strcat(filestr, ".jpg");
+
+        preview_deinit();   //destroy preview element as loadJPEG will create a new one
+        if(!loadJPEG(filestr)) {
+            preview_deinit();
+        }
+    }
 
     vc_dispmanx_update_submit_sync( fe_update );
 

@@ -122,6 +122,9 @@ uint8 joy_axes[2][8];
 
 int joyaxis_LR, joyaxis_UD;
 
+#define JOYLR 0
+#define JOYUD 1
+
 void InitTimer ();
 void *S9xProcessSound (void *);
 void S9xParseConfigFile (void);
@@ -437,61 +440,78 @@ static Uint16 sfc_joy[NUMKEYS];
 
 void S9xInitInputDevices ()
 {
-	memset(joy_buttons, 0, 32*2);
-	memset(joy_axes, 0, 8*2);
-	memset(sfc_key, 0, NUMKEYS*2);
-	memset(sfc_joy, 0, NUMKEYS*2);
+    memset(joy_buttons, 0, 32*2);
+    memset(joy_axes, 0, 8*2);
+    memset(sfc_key, 0, NUMKEYS*2);
+    memset(sfc_joy, 0, NUMKEYS*2);
 
-	//Open config file for reading below
-	open_config_file();
+    //Open config file for reading below
+    open_config_file();
 
-	//Configure keys from config file or defaults
-	sfc_key[A_1] = get_integer_conf("Keyboard", "A_1", RPI_KEY_A);
-	sfc_key[B_1] = get_integer_conf("Keyboard", "B_1", RPI_KEY_B);
-	sfc_key[X_1] = get_integer_conf("Keyboard", "X_1", RPI_KEY_X);
-	sfc_key[Y_1] = get_integer_conf("Keyboard", "Y_1", RPI_KEY_Y);
-	sfc_key[L_1] = get_integer_conf("Keyboard", "L_1", RPI_KEY_L);
-	sfc_key[R_1] = get_integer_conf("Keyboard", "R_1", RPI_KEY_R);
-	sfc_key[START_1] = get_integer_conf("Keyboard", "START_1", RPI_KEY_START);
-	sfc_key[SELECT_1] = get_integer_conf("Keyboard", "SELECT_1", RPI_KEY_SELECT);
-	sfc_key[LEFT_1] = get_integer_conf("Keyboard", "LEFT_1", RPI_KEY_LEFT);
-	sfc_key[RIGHT_1] = get_integer_conf("Keyboard", "RIGHT_1", RPI_KEY_RIGHT);
-	sfc_key[UP_1] = get_integer_conf("Keyboard", "UP_1", RPI_KEY_UP);
-	sfc_key[DOWN_1] = get_integer_conf("Keyboard", "DOWN_1", RPI_KEY_DOWN);
+    //Configure keys from config file or defaults
+    sfc_key[A_1] = get_integer_conf("Keyboard", "A_1", RPI_KEY_A);
+    sfc_key[B_1] = get_integer_conf("Keyboard", "B_1", RPI_KEY_B);
+    sfc_key[X_1] = get_integer_conf("Keyboard", "X_1", RPI_KEY_X);
+    sfc_key[Y_1] = get_integer_conf("Keyboard", "Y_1", RPI_KEY_Y);
+    sfc_key[L_1] = get_integer_conf("Keyboard", "L_1", RPI_KEY_L);
+    sfc_key[R_1] = get_integer_conf("Keyboard", "R_1", RPI_KEY_R);
+    sfc_key[START_1] = get_integer_conf("Keyboard", "START_1", RPI_KEY_START);
+    sfc_key[SELECT_1] = get_integer_conf("Keyboard", "SELECT_1", RPI_KEY_SELECT);
+    sfc_key[LEFT_1] = get_integer_conf("Keyboard", "LEFT_1", RPI_KEY_LEFT);
+    sfc_key[RIGHT_1] = get_integer_conf("Keyboard", "RIGHT_1", RPI_KEY_RIGHT);
+    sfc_key[UP_1] = get_integer_conf("Keyboard", "UP_1", RPI_KEY_UP);
+    sfc_key[DOWN_1] = get_integer_conf("Keyboard", "DOWN_1", RPI_KEY_DOWN);
 
-	sfc_key[QUIT] = get_integer_conf("Keyboard", "QUIT", RPI_KEY_QUIT);
-	sfc_key[ACCEL] = get_integer_conf("Keyboard", "ACCEL", RPI_KEY_ACCEL);
+    sfc_key[QUIT] = get_integer_conf("Keyboard", "QUIT", RPI_KEY_QUIT);
+    sfc_key[ACCEL] = get_integer_conf("Keyboard", "ACCEL", RPI_KEY_ACCEL);
 
 /*	sfc_key[LEFT_2] = SDLK_4;
-	sfc_key[RIGHT_2] = SDLK_6;
-	sfc_key[UP_2] = SDLK_8;
-	sfc_key[DOWN_2] = SDLK_2;
-	sfc_key[LU_2] = SDLK_7;
-	sfc_key[LD_2] = SDLK_1;
-	sfc_key[RU_2] = SDLK_9;
-	sfc_key[RD_2] = SDLK_3; */
+    sfc_key[RIGHT_2] = SDLK_6;
+    sfc_key[UP_2] = SDLK_8;
+    sfc_key[DOWN_2] = SDLK_2;
+    sfc_key[LU_2] = SDLK_7;
+    sfc_key[LD_2] = SDLK_1;
+    sfc_key[RU_2] = SDLK_9;
+    sfc_key[RD_2] = SDLK_3; */
 
-	//Configure joysticks from config file or defaults
-	sfc_joy[A_1] = get_integer_conf("Joystick", "A_1", RPI_JOY_A);
-	sfc_joy[B_1] = get_integer_conf("Joystick", "B_1", RPI_JOY_B);
-	sfc_joy[X_1] = get_integer_conf("Joystick", "X_1", RPI_JOY_X);
-	sfc_joy[Y_1] = get_integer_conf("Joystick", "Y_1", RPI_JOY_Y);
-	sfc_joy[L_1] = get_integer_conf("Joystick", "L_1", RPI_JOY_L);
-	sfc_joy[R_1] = get_integer_conf("Joystick", "R_1", RPI_JOY_R);
-	sfc_joy[START_1] = get_integer_conf("Joystick", "START_1", RPI_JOY_START);
-	sfc_joy[SELECT_1] = get_integer_conf("Joystick", "SELECT_1", RPI_JOY_SELECT);
+    //Configure joysticks from config file or defaults
+    sfc_joy[A_1] = get_integer_conf("Joystick", "A_1", RPI_JOY_A);
+    sfc_joy[B_1] = get_integer_conf("Joystick", "B_1", RPI_JOY_B);
+    sfc_joy[X_1] = get_integer_conf("Joystick", "X_1", RPI_JOY_X);
+    sfc_joy[Y_1] = get_integer_conf("Joystick", "Y_1", RPI_JOY_Y);
+    sfc_joy[L_1] = get_integer_conf("Joystick", "L_1", RPI_JOY_L);
+    sfc_joy[R_1] = get_integer_conf("Joystick", "R_1", RPI_JOY_R);
+    sfc_joy[LEFT_1] = get_integer_conf("Joystick", "LEFT_1", RPI_JOY_LEFT);
+    sfc_joy[RIGHT_1] = get_integer_conf("Joystick", "RIGHT_1", RPI_JOY_RIGHT);
+    sfc_joy[UP_1] = get_integer_conf("Joystick", "UP_1", RPI_JOY_UP);
+    sfc_joy[DOWN_1] = get_integer_conf("Joystick", "DOWN_1", RPI_JOY_DOWN);
+    sfc_joy[START_1] = get_integer_conf("Joystick", "START_1", RPI_JOY_START);
+    sfc_joy[SELECT_1] = get_integer_conf("Joystick", "SELECT_1", RPI_JOY_SELECT);
 
-	sfc_joy[QUIT] = get_integer_conf("Joystick", "QUIT", RPI_JOY_QUIT);
-	sfc_joy[ACCEL] = get_integer_conf("Joystick", "ACCEL", RPI_JOY_ACCEL);
+    sfc_joy[A_2] = get_integer_conf("Joystick", "A_2", RPI_JOY_A);
+    sfc_joy[B_2] = get_integer_conf("Joystick", "B_2", RPI_JOY_B);
+    sfc_joy[X_2] = get_integer_conf("Joystick", "X_2", RPI_JOY_X);
+    sfc_joy[Y_2] = get_integer_conf("Joystick", "Y_2", RPI_JOY_Y);
+    sfc_joy[L_2] = get_integer_conf("Joystick", "L_2", RPI_JOY_L);
+    sfc_joy[R_2] = get_integer_conf("Joystick", "R_2", RPI_JOY_R);
+    sfc_joy[LEFT_2] = get_integer_conf("Joystick", "LEFT_2", RPI_JOY_LEFT);
+    sfc_joy[RIGHT_2] = get_integer_conf("Joystick", "RIGHT_2", RPI_JOY_RIGHT);
+    sfc_joy[UP_2] = get_integer_conf("Joystick", "UP_2", RPI_JOY_UP);
+    sfc_joy[DOWN_2] = get_integer_conf("Joystick", "DOWN_2", RPI_JOY_DOWN);
+    sfc_joy[START_2] = get_integer_conf("Joystick", "START_2", RPI_JOY_START);
+    sfc_joy[SELECT_2] = get_integer_conf("Joystick", "SELECT_2", RPI_JOY_SELECT);
 
-	sfc_joy[QLOAD] = get_integer_conf("Joystick", "QLOAD", RPI_JOY_QLOAD);
-	sfc_joy[QSAVE] = get_integer_conf("Joystick", "QSAVE", RPI_JOY_QSAVE);
+    sfc_joy[QUIT] = get_integer_conf("Joystick", "QUIT", RPI_JOY_QUIT);
+    sfc_joy[ACCEL] = get_integer_conf("Joystick", "ACCEL", RPI_JOY_ACCEL);
 
-	//Read joystick axis to use, default to 0 & 1
-	joyaxis_LR = get_integer_conf("Joystick", "JA_LR", 0);
-	joyaxis_UD = get_integer_conf("Joystick", "JA_UD", 1);
+    sfc_joy[QLOAD] = get_integer_conf("Joystick", "QLOAD", RPI_JOY_QLOAD);
+    sfc_joy[QSAVE] = get_integer_conf("Joystick", "QSAVE", RPI_JOY_QSAVE);
 
-	close_config_file();
+    //Read joystick axis to use, default to 0 & 1
+    joyaxis_LR = get_integer_conf("Joystick", "JA_LR", 0);
+    joyaxis_UD = get_integer_conf("Joystick", "JA_UD", 1);
+
+    close_config_file();
 }
 	
 
@@ -508,15 +528,15 @@ const char *S9xGetSnapshotDirectory ()
 	if (!(snapshot = getenv ("SNES9X_SNAPSHOT_DIR")) &&
 	!(snapshot = getenv ("SNES96_SNAPSHOT_DIR")))
 	{
-	const char *home = GetHomeDirectory ();
-	strcpy (filename, home);
-	strcat (filename, SLASH_STR);
-	strcat (filename, ".snes96_snapshots");
-	mkdir (filename, 0777);
-	chown (filename, getuid (), getgid ());
+	    const char *home = GetHomeDirectory ();
+	    strcpy (filename, home);
+	    strcat (filename, SLASH_STR);
+	    strcat (filename, ".snes96_snapshots");
+	    mkdir (filename, 0777);
+	    chown (filename, getuid (), getgid ());
 	}
 	else
-	return (snapshot);
+	    return (snapshot);
 
 	return (filename);
 }
@@ -831,11 +851,59 @@ void S9xSyncSpeed ()
 
 }
 
+extern SDL_Joystick *joy[2];
+
 void S9xProcessEvents (bool8_32 block)
 {
-	uint32 num = 0;
+	uint32 num = 0, i;
 	static bool8_32 TURBO = FALSE;
+	int hatmovement=0;
 
+	//Process two joysticks
+	for(i=0;i<2;i++) {
+		joy_axes[i][JOYLR] = CENTER;
+		joy_axes[i][JOYUD] = CENTER;
+
+		if(SDL_JoystickNumHats(joy[i]) > 0) {
+        	Uint8 hat = SDL_JoystickGetHat(joy[i], 0);
+			if (hat != 0) {
+				hatmovement=1;
+        		if(hat & SDL_HAT_UP) { joy_axes[i][JOYUD] = UP; }
+        		if(hat & SDL_HAT_DOWN) { joy_axes[i][JOYUD] = DOWN; }
+        		if(hat & SDL_HAT_LEFT) { joy_axes[i][JOYLR] = LEFT; }
+        		if(hat & SDL_HAT_RIGHT) { joy_axes[i][JOYLR] = RIGHT; }
+			}
+		}
+
+	    int axis = SDL_JoystickNumAxes(joy[i]);
+
+		//HAT movement overrides analogue as analogue always shows a value
+	    if(axis > 0 && !hatmovement) {
+			Sint16 x_move = SDL_JoystickGetAxis(joy[i], joyaxis_LR);
+			Sint16 y_move = SDL_JoystickGetAxis(joy[i], joyaxis_UD);
+	
+			if(x_move != 0) {
+				if(x_move > -10000 && x_move < 10000)
+					joy_axes[i][JOYLR] = CENTER;
+				else if(x_move > 10000)
+					joy_axes[i][JOYLR] = RIGHT;
+				else
+					joy_axes[i][JOYLR] = LEFT;
+			}
+	
+			if(y_move != 0) {
+				if(y_move > -10000 && y_move < 10000)
+					joy_axes[i][JOYUD] = CENTER;
+				else if(y_move > 10000)
+					joy_axes[i][JOYUD] = DOWN;
+				else
+					joy_axes[i][JOYUD] = UP;
+			}
+		}
+
+    }
+
+	//We only process button & key events
 	SDL_Event event;
 	while(SDL_PollEvent(&event)) {
 		switch(event.type) {
@@ -845,35 +913,11 @@ void S9xProcessEvents (bool8_32 block)
 		case SDL_JOYBUTTONUP:
 			joy_buttons[event.jbutton.which][event.jbutton.button] = 0;
 			break;
-        case SDL_JOYAXISMOTION:
-			if(event.jaxis.axis == joyaxis_LR) {
-				if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
-					joy_axes[event.jbutton.which][joyaxis_LR] = CENTER;
-				else if(event.jaxis.value > 10000)
-					joy_axes[event.jbutton.which][joyaxis_LR] = RIGHT;
-				else
-					joy_axes[event.jbutton.which][joyaxis_LR] = LEFT;
-			}
-			if(event.jaxis.axis == joyaxis_UD) {
-				if(event.jaxis.value > -10000 && event.jaxis.value < 10000)
-					joy_axes[event.jbutton.which][joyaxis_UD] = CENTER;
-				else if(event.jaxis.value > 10000)
-					joy_axes[event.jbutton.which][joyaxis_UD] = DOWN;
-				else
-					joy_axes[event.jbutton.which][joyaxis_UD] = UP;
-			}
-            break;
 		case SDL_KEYDOWN:
 			keyssnes = SDL_GetKeyState(NULL);
 
 	 		if (event.key.keysym.sym == SDLK_0)
 				Settings.DisplayFrameRate = !Settings.DisplayFrameRate;
-
-/*		    else if (event.key.keysym.sym == SDLK_1)	PPU.BG_Forced ^= 1;
-		    else if (event.key.keysym.sym == SDLK_2)	PPU.BG_Forced ^= 2;
-		    else if (event.key.keysym.sym == SDLK_3)	PPU.BG_Forced ^= 4;
-		    else if (event.key.keysym.sym == SDLK_4)	PPU.BG_Forced ^= 8;
-		    else if (event.key.keysym.sym == SDLK_5)	PPU.BG_Forced ^= 16; */
 
 			else if (event.key.keysym.sym == SDLK_F1)	num = 1;
 			else if (event.key.keysym.sym == SDLK_F2)	num = 2;
@@ -1106,6 +1150,7 @@ uint32 S9xReadJoypad (int which1)
 	if(which1 > 1) return val;
 
 	if(which1 == 0) {
+		// Handle keyboard and first joystick as the same player/controls
 		if (keyssnes[sfc_key[L_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[L_1]])		val |= SNES_TL_MASK;
 		if (keyssnes[sfc_key[R_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[R_1]])		val |= SNES_TR_MASK;
 		if (keyssnes[sfc_key[X_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[X_1]])		val |= SNES_X_MASK;
@@ -1114,23 +1159,37 @@ uint32 S9xReadJoypad (int which1)
 		if (keyssnes[sfc_key[A_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[A_1]])		val |= SNES_A_MASK;
 		if (keyssnes[sfc_key[START_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[START_1]])	val |= SNES_START_MASK;
 		if (keyssnes[sfc_key[SELECT_1]] == SDL_PRESSED || joy_buttons[which1][sfc_joy[SELECT_1]])	val |= SNES_SELECT_MASK;
-		if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_UD] == UP)		val |= SNES_UP_MASK;
-		if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_UD] == DOWN)	val |= SNES_DOWN_MASK;
-		if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_LR] == LEFT)	val |= SNES_LEFT_MASK;
-		if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[which1][joyaxis_LR] == RIGHT)	val |= SNES_RIGHT_MASK;
-	} else {
-		if (joy_buttons[which1][sfc_joy[L_1]])		val |= SNES_TL_MASK;
-		if (joy_buttons[which1][sfc_joy[R_1]])		val |= SNES_TR_MASK;
-		if (joy_buttons[which1][sfc_joy[X_1]])		val |= SNES_X_MASK;
-		if (joy_buttons[which1][sfc_joy[Y_1]])		val |= SNES_Y_MASK;
-		if (joy_buttons[which1][sfc_joy[B_1]])		val |= SNES_B_MASK;
-		if (joy_buttons[which1][sfc_joy[A_1]])		val |= SNES_A_MASK;
-		if (joy_buttons[which1][sfc_joy[START_1]])	val |= SNES_START_MASK;
-		if (joy_buttons[which1][sfc_joy[SELECT_1]])	val |= SNES_SELECT_MASK;
-		if (joy_axes[which1][joyaxis_UD] == UP)			val |= SNES_UP_MASK;
-		if (joy_axes[which1][joyaxis_UD] == DOWN)		val |= SNES_DOWN_MASK;
-		if (joy_axes[which1][joyaxis_LR] == LEFT)		val |= SNES_LEFT_MASK;
-		if (joy_axes[which1][joyaxis_LR] == RIGHT)		val |= SNES_RIGHT_MASK;
+		if (keyssnes[sfc_key[UP_1]] == SDL_PRESSED || joy_axes[which1][JOYUD] == UP)		val |= SNES_UP_MASK;
+		if (keyssnes[sfc_key[DOWN_1]] == SDL_PRESSED || joy_axes[which1][JOYUD] == DOWN)	val |= SNES_DOWN_MASK;
+		if (keyssnes[sfc_key[LEFT_1]] == SDL_PRESSED || joy_axes[which1][JOYLR] == LEFT)	val |= SNES_LEFT_MASK;
+		if (keyssnes[sfc_key[RIGHT_1]] == SDL_PRESSED || joy_axes[which1][JOYLR] == RIGHT)	val |= SNES_RIGHT_MASK;
+
+		// DPAD special buttons
+		if (joy_buttons[which1][sfc_joy[LEFT_1]])	val |= SNES_LEFT_MASK;
+		if (joy_buttons[which1][sfc_joy[RIGHT_1]])	val |= SNES_RIGHT_MASK;
+		if (joy_buttons[which1][sfc_joy[UP_1]])	val |= SNES_UP_MASK;
+		if (joy_buttons[which1][sfc_joy[DOWN_1]])	val |= SNES_DOWN_MASK;
+	}
+	if(which1 == 1) {  
+		//Handle second joystick
+		if (joy_buttons[which1][sfc_joy[L_2]])		val |= SNES_TL_MASK;
+		if (joy_buttons[which1][sfc_joy[R_2]])		val |= SNES_TR_MASK;
+		if (joy_buttons[which1][sfc_joy[X_2]])		val |= SNES_X_MASK;
+		if (joy_buttons[which1][sfc_joy[Y_2]])		val |= SNES_Y_MASK;
+		if (joy_buttons[which1][sfc_joy[B_2]])		val |= SNES_B_MASK;
+		if (joy_buttons[which1][sfc_joy[A_2]])		val |= SNES_A_MASK;
+		if (joy_buttons[which1][sfc_joy[START_2]])	val |= SNES_START_MASK;
+		if (joy_buttons[which1][sfc_joy[SELECT_2]])	val |= SNES_SELECT_MASK;
+		if (joy_axes[which1][JOYUD] == UP)			val |= SNES_UP_MASK;
+		if (joy_axes[which1][JOYUD] == DOWN)		val |= SNES_DOWN_MASK;
+		if (joy_axes[which1][JOYLR] == LEFT)		val |= SNES_LEFT_MASK;
+		if (joy_axes[which1][JOYLR] == RIGHT)		val |= SNES_RIGHT_MASK;
+
+		// DPAD special buttons
+		if (joy_buttons[which1][sfc_joy[LEFT_2]])	val |= SNES_LEFT_MASK;
+		if (joy_buttons[which1][sfc_joy[RIGHT_2]])	val |= SNES_RIGHT_MASK;
+		if (joy_buttons[which1][sfc_joy[UP_2]])		val |= SNES_UP_MASK;
+		if (joy_buttons[which1][sfc_joy[DOWN_2]])	val |= SNES_DOWN_MASK;
 	}
 
 	if (keyssnes[sfc_key[QUIT]] == SDL_PRESSED || joy_buttons[0][sfc_joy[QUIT]]) S9xExit();

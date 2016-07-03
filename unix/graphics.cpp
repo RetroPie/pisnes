@@ -146,12 +146,11 @@ void S9xInitDisplay (int height)
             //aren't SDL compatible
             if(joy[i])
             {
-                if (SDL_JoystickNumAxes(joy[i]) > 6)
+                if (SDL_JoystickNumAxes(joy[i]) > 28)
                 {
                     SDL_JoystickClose(joy[i]);
                     joy[i]=0;
                     printf("Error detected invalid joystick/keyboard\n");
-                    break;
                 }
             }
 			if(i==1) break;		//Only need two joysticks
@@ -186,95 +185,103 @@ void S9xInitDisplay (int height)
 		((uint16 *)(RGBconvert))[i] = ((i >> 11) << 10) | ((((i >> 5) & 63) >> 1) << 5) | (i & 31);
 
 
-{
-	int ret;
+    {
+    	int ret;
+    
+    	VC_RECT_T dst_rect;
+    	VC_RECT_T src_rect;
+    
+    	// get an EGL display connection
+    	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    	assert(display != EGL_NO_DISPLAY);
+    
+    	// initialize the EGL display connection
+    	EGLBoolean result = eglInitialize(display, NULL, NULL);
+    	assert(EGL_FALSE != result);
+    
+    	// get an appropriate EGL frame buffer configuration
+    	EGLint num_config;
+    	EGLConfig config;
+    	static const EGLint attribute_list[] =
+    	{
+    	    EGL_RED_SIZE, 8,
+    	    EGL_GREEN_SIZE, 8,
+    	    EGL_BLUE_SIZE, 8,
+    	    EGL_ALPHA_SIZE, 8,
+    	    EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+    	    EGL_NONE
+    	};
+    	result = eglChooseConfig(display, attribute_list, &config, 1, &num_config);
+    	assert(EGL_FALSE != result);
+    
+    	result = eglBindAPI(EGL_OPENGL_ES_API);
+    	assert(EGL_FALSE != result);
+    
+    	// create an EGL rendering context
+    	static const EGLint context_attributes[] =
+    	{
+    	    EGL_CONTEXT_CLIENT_VERSION, 2,
+    	    EGL_NONE
+    	};
+    	context = eglCreateContext(display, config, EGL_NO_CONTEXT, context_attributes);
+    	assert(context != EGL_NO_CONTEXT);
+    
+    	// create an EGL window surface
+    	int32_t success = graphics_get_display_size(0, &display_width, &display_height);
+    	assert(success >= 0);
+    
+    	vc_dispmanx_rect_set( &src_rect, 0, 0, display_width << 16, display_height << 16);
+    	vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height);
+    
+    	dispman_display = vc_dispmanx_display_open(0);
+    	dispman_update = vc_dispmanx_update_start(0);
+    	dispman_element = vc_dispmanx_element_add(
+                                dispman_update, 
+                                dispman_display,
+    	  				        10, //Must be above frontend GUI
+                                &dst_rect, 
+                                0,  //No resource allocated for EGL window
+                                &src_rect, 
+    					        DISPMANX_PROTECTION_NONE, 
+                                0, 0,
+                                (DISPMANX_TRANSFORM_T) 0);
+     
+    	//Create a blank background for the whole screen, make sure width is divisible by 32!
+        //Make size of element exact size of display to avoid expensive stretching
+    	uint32_t vc_image_ptr;
+    	resource_bg = vc_dispmanx_resource_create(VC_IMAGE_RGB565, display_width, display_height, &vc_image_ptr);
+    
+    	vc_dispmanx_rect_set( &src_rect, 0, 0, display_width << 16, display_height << 16);
+    	vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height );
+    
+    	dispman_element_bg = vc_dispmanx_element_add(  
+                                dispman_update,
+    	                        dispman_display,
+    	                        9, //one below rendering element
+    	                        &dst_rect,
+    	                        resource_bg,
+    	                        &src_rect,
+    	                        DISPMANX_PROTECTION_NONE,
+    	                        0, 0,
+                                (DISPMANX_TRANSFORM_T) 0);
+    
+    	nativewindow.element = dispman_element;
+    	nativewindow.width = display_width;
+    	nativewindow.height = display_height;
+    	vc_dispmanx_update_submit_sync(dispman_update);
+    
+    	surface = eglCreateWindowSurface(display, config, &nativewindow, NULL);
+    	assert(surface != EGL_NO_SURFACE);
+    
+    	// connect the context to the surface
+    	result = eglMakeCurrent(display, surface, surface, context);
+    	assert(EGL_FALSE != result);
+    
+    //sqdebug   eglSwapInterval(display, 0);
+    
+    	gles2_create(display_width, display_height, width, height);
 
-	VC_RECT_T dst_rect;
-	VC_RECT_T src_rect;
-
-	// get an EGL display connection
-	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-	assert(display != EGL_NO_DISPLAY);
-
-	// initialize the EGL display connection
-	EGLBoolean result = eglInitialize(display, NULL, NULL);
-	assert(EGL_FALSE != result);
-
-	// get an appropriate EGL frame buffer configuration
-	EGLint num_config;
-	EGLConfig config;
-	static const EGLint attribute_list[] =
-	{
-	    EGL_RED_SIZE, 8,
-	    EGL_GREEN_SIZE, 8,
-	    EGL_BLUE_SIZE, 8,
-	    EGL_ALPHA_SIZE, 8,
-	    EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-	    EGL_NONE
-	};
-	result = eglChooseConfig(display, attribute_list, &config, 1, &num_config);
-	assert(EGL_FALSE != result);
-
-	result = eglBindAPI(EGL_OPENGL_ES_API);
-	assert(EGL_FALSE != result);
-
-	// create an EGL rendering context
-	static const EGLint context_attributes[] =
-	{
-	    EGL_CONTEXT_CLIENT_VERSION, 2,
-	    EGL_NONE
-	};
-	context = eglCreateContext(display, config, EGL_NO_CONTEXT, context_attributes);
-	assert(context != EGL_NO_CONTEXT);
-
-	// create an EGL window surface
-	int32_t success = graphics_get_display_size(0, &display_width, &display_height);
-	assert(success >= 0);
-
-	vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height);
-	vc_dispmanx_rect_set( &src_rect, 0, 0, display_width << 16, display_height << 16);
-
-	dispman_display = vc_dispmanx_display_open(0);
-	dispman_update = vc_dispmanx_update_start(0);
-	dispman_element = vc_dispmanx_element_add(dispman_update, dispman_display,
-	  				10, &dst_rect, 0, &src_rect, 
-					DISPMANX_PROTECTION_NONE, NULL, NULL, DISPMANX_NO_ROTATE);
-
-	vc_dispmanx_rect_set( &dst_rect, 0, 0, display_width, display_height );
-	vc_dispmanx_rect_set( &src_rect, 0, 0, 128 << 16, 128 << 16);
- 
-	//Create a blank background for the whole screen, make sure width is divisible by 32!
-	uint32_t crap;
-	resource_bg = vc_dispmanx_resource_create(VC_IMAGE_RGB565, 128, 128, &crap);
-	dispman_element_bg = vc_dispmanx_element_add(  dispman_update,
-	                                      dispman_display,
-	                                      9,
-	                                      &dst_rect,
-	                                      resource_bg,
-	                                      &src_rect,
-	                                      DISPMANX_PROTECTION_NONE,
-	                                      0,
-	                                      0,
-	                                      (DISPMANX_TRANSFORM_T) 0 );
-
-	nativewindow.element = dispman_element;
-	nativewindow.width = display_width;
-	nativewindow.height = display_height;
-	vc_dispmanx_update_submit_sync(dispman_update);
-
-	surface = eglCreateWindowSurface(display, config, &nativewindow, NULL);
-	assert(surface != EGL_NO_SURFACE);
-
-	// connect the context to the surface
-	result = eglMakeCurrent(display, surface, surface, context);
-	assert(EGL_FALSE != result);
-
-//sq	eglSwapInterval(display, 0);
-
-	gles2_create(display_width, display_height, width, height);
-
-}
-
+    }
 
 }
 

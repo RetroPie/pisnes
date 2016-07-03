@@ -18,21 +18,45 @@ ACCEL=8
 [Joystick]
 # Get codes from "jstest /dev/input/js0"
 # from package "joystick"
-A_1=3
-B_1=2
-X_1=1
-Y_1=0
+# Defaults to XBOX 360 controller
+A_1=1
+B_1=0
+X_1=3
+Y_1=2
 L_1=4
-R_1=6
-START_1=9
-SELECT_1=8
+R_1=5
+START_1=7
+SELECT_1=6
 QUIT=99
-ACCEL=7
+ACCEL=98
 QLOAD=10
-QSAVE=11
+QSAVE=9
 #Joystick axis
 JA_LR=0
 JA_UD=1
+#Joystick DPAD buttons
+LEFT_1=11
+RIGHT_1=12
+UP_1=13
+DOWN_1=14
+#player 2 button configuration
+A_2=1
+B_2=0
+X_2=3
+Y_2=2
+L_2=4
+R_2=5
+START_2=7
+SELECT_2=6
+#Joystick axis
+JA_LR_2=0
+JA_UD_2=1
+#Joystick DPAD buttons
+LEFT_2=11
+RIGHT_2=12
+UP_2=13
+DOWN_2=14
+
 
 [Graphics]
 DisplaySmoothStretch=1
@@ -51,4 +75,5 @@ APUEnabled=1
 # Sound rates below as index, i.e. 7=44100 (some of these produce static)
 # 0, 8192, 11025, 16000, 22050, 29300, 32000, 44100
 SoundPlaybackRate=7
+# Enable on RPI2 for clearer sound, disable on RPI1 due to performance impact
 InterpolatedSound=0
