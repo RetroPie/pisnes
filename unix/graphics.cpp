@@ -133,27 +133,16 @@ void S9xInitDisplay (int height)
 
 	bcm_host_init();
 
-    //We handle up to four joysticks
-    if(SDL_NumJoysticks())
+    // We only handle up to two joysticks
+    int numJoySticks = SDL_NumJoysticks();
+    if (numJoySticks)
     {
+        int e = numJoySticks > 2 ? 2 : numJoySticks;
         int i;
         SDL_JoystickEventState(SDL_ENABLE);
 
-        for(i=0;i<SDL_NumJoysticks();i++) {
+        for(i=0;i<e;i++) {
             joy[i]=SDL_JoystickOpen(i);
-
-            //Check for valid joystick, some keyboards
-            //aren't SDL compatible
-            if(joy[i])
-            {
-                if (SDL_JoystickNumAxes(joy[i]) > 28)
-                {
-                    SDL_JoystickClose(joy[i]);
-                    joy[i]=0;
-                    printf("Error detected invalid joystick/keyboard\n");
-                }
-            }
-			if(i==1) break;		//Only need two joysticks
         }
     }
 
