@@ -84,7 +84,6 @@ extern uint32 xs, ys, cl, cs;
 
 void gles2_create(int display_width, int display_height, int bitmap_width, int bitmap_height);
 void gles2_destroy();
-void gles2_draw(short *screen);
 void gles2_palette_changed();
 
 EGLDisplay display = NULL;

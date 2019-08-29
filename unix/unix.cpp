@@ -139,7 +139,7 @@ static uint32 ffc = 0;
 bool8_32 nso = FALSE, vga = FALSE;
 uint32 xs = 256, ys = 240, cl = 0, cs = 0, mfs = 10;
 
-void gles2_draw(short *screen, int width, int height);
+void gles2_draw(unsigned short *screen, int width, int height);
 
 extern EGLDisplay display;
 extern EGLSurface surface;
@@ -1211,6 +1211,7 @@ void S9xParseConfigFile (void)
 	Settings.DisplayBorder = get_integer_conf("Graphics", "DisplayBorder", 0);
 
 	Settings.DisplayEffect = get_integer_conf("Graphics", "DisplayEffect", 0);
+	Settings.DisplayInteger = get_integer_conf("Graphics", "DisplayInteger", 0);
 
 	Settings.SkipFrames = get_integer_conf("Graphics", "AutoFrameskip", 1);
 	if (Settings.SkipFrames)

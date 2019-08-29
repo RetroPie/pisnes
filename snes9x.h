@@ -340,6 +340,7 @@ struct SSettings{
     bool8_32  MaintainAspectRatio;
     uint32    DisplayBorder;
 	uint32    DisplayEffect;
+	uint32    DisplayInteger;
     
 // Fixes for individual games
     uint32 StrikeGunnerOffsetHack;
