@@ -318,32 +318,32 @@ void gles2_create(int display_width, int display_height, int bitmap_width, int b
 	dis_width = display_width;
 	dis_height = display_height;
 
-    if(Settings.DisplayInteger)
-    {
-        // screen integer - x1
-	    sx = (float)bitmap_width/(float)display_width;
-	    sy = (float)bitmap_height/(float)display_height;
-
-	    SetOrtho(proj, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx, sy);
-
-	    printf("integer enabled - %ux%u : %ux%u (x:%f y:%f)\n", 
-	        display_width, display_height, bitmap_width, bitmap_height, sx, sy);
-    }
-    else
+	if(Settings.DisplayInteger)
 	{
-	   	// Screen aspect ratio adjustment
-    	if(Settings.MaintainAspectRatio)
-        {
-		    float a = (float)display_width/(float)display_height;
-		    float a0 = (float)bitmap_width/(float)bitmap_height;
-		    if(a > a0)
-			    sx = a0/a;
-		    else
-			    sy = a/a0;
-	    }
+		// screen integer - x1
+		sx = (float)bitmap_width/(float)display_width;
+		sy = (float)bitmap_height/(float)display_height;
 
-	    //Set the dimensions for displaying the texture(bitmap) on the screen
-	    SetOrtho(proj, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx*op_zoom, sy*op_zoom);
+		SetOrtho(proj, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx, sy);
+
+		printf("integer enabled - %ux%u : %ux%u (x:%f y:%f)\n", 
+			display_width, display_height, bitmap_width, bitmap_height, sx, sy);
+	}
+	else
+	{
+		// Screen aspect ratio adjustment
+		if(Settings.MaintainAspectRatio)
+		{
+			float a = (float)display_width/(float)display_height;
+			float a0 = (float)bitmap_width/(float)bitmap_height;
+			if(a > a0)
+				sx = a0/a;
+			else
+				sy = a/a0;
+		}
+
+		//Set the dimensions for displaying the texture(bitmap) on the screen
+		SetOrtho(proj, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx*op_zoom, sy*op_zoom);
 	}
 
 }
