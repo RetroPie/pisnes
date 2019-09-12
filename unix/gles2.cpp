@@ -318,19 +318,34 @@ void gles2_create(int display_width, int display_height, int bitmap_width, int b
 	dis_width = display_width;
 	dis_height = display_height;
 
-	// Screen aspect ratio adjustment
-	if(Settings.MaintainAspectRatio)
+	if(Settings.DisplayInteger)
 	{
-		float a = (float)display_width/(float)display_height;
-		float a0 = (float)bitmap_width/(float)bitmap_height;
-		if(a > a0)
-			sx = a0/a;
-		else
-			sy = a/a0;
+		// screen integer - x1
+		sx = (float)bitmap_width/(float)display_width;
+		sy = (float)bitmap_height/(float)display_height;
+
+		SetOrtho(proj, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx, sy);
+
+		printf("integer enabled - %ux%u : %ux%u (x:%f y:%f)\n", 
+			display_width, display_height, bitmap_width, bitmap_height, sx, sy);
+	}
+	else
+	{
+		// Screen aspect ratio adjustment
+		if(Settings.MaintainAspectRatio)
+		{
+			float a = (float)display_width/(float)display_height;
+			float a0 = (float)bitmap_width/(float)bitmap_height;
+			if(a > a0)
+				sx = a0/a;
+			else
+				sy = a/a0;
+		}
+
+		//Set the dimensions for displaying the texture(bitmap) on the screen
+		SetOrtho(proj, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx*op_zoom, sy*op_zoom);
 	}
 
-	//Set the dimensions for displaying the texture(bitmap) on the screen
-	SetOrtho(proj, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx*op_zoom, sy*op_zoom);
 }
 
 void gles2_destroy()
@@ -369,7 +384,7 @@ static void gles2_DrawQuad(const ShaderInfo *sh, GLuint textures[2])
 
 inline unsigned short BGR565(unsigned char r, unsigned char g, unsigned char b) { return ((r&~7) << 8)|((g&~3) << 3)|(b >> 3); }
 
-void gles2_draw(short *screen, int width, int height)
+void gles2_draw(unsigned short *screen, int width, int height)
 {
 	if(!shader.program) return;
 

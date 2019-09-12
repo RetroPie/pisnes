@@ -65,6 +65,7 @@ DisplaySmoothStretch=1
 DisplayEffect=0
 MaintainAspectRatio=1
 DisplayBorder=0
+DisplayInteger=0
 AutoFrameskip=1
 Frameskip=200
 Transparency=1
